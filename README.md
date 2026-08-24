@@ -72,13 +72,15 @@ podman run --rm \
 ├── datasets/
 │   ├── prompts.jsonl          # Custom prompts in JSONL format
 │   ├── prompts.csv            # Same prompts in CSV format
-│   └── coding-tasks.jsonl     # Domain-specific coding prompts
+│   ├── coding-tasks.jsonl     # Domain-specific coding prompts
+│   └── multiturn-conversations.jsonl  # Multi-turn chat histories
 ├── scripts/
 │   ├── run-sweep.sh           # Full sweep benchmark (sync → throughput → interpolated rates)
 │   ├── run-constant-rate.sh   # Fixed request rate benchmark
 │   ├── run-throughput.sh      # Max throughput discovery
 │   ├── run-custom-dataset.sh  # Benchmark with your own dataset
-│   └── run-concurrent.sh      # Fixed concurrency benchmark
+│   ├── run-concurrent.sh      # Fixed concurrency benchmark
+│   └── run-multiturn.sh       # Multi-turn conversation benchmark
 └── results/                   # Output directory (gitignored)
 ```
 
@@ -224,3 +226,29 @@ After a sweep, check the HTML report (`results/sweep.html`) for visual charts. K
 - **Error rate**: any non-zero error rate at a given concurrency level signals you've exceeded capacity
 
 The CSV output is ready for spreadsheet analysis or import into Grafana/BI tools.
+
+## Multi-Turn Conversation Testing
+
+GuideLLM supports multi-turn benchmarks to simulate realistic chat workloads. This is useful for measuring how your model handles conversation context and how the serving infrastructure manages KV cache across turns.
+
+### Synthetic multi-turn
+
+Generate multi-turn conversations on the fly with the `turns` parameter:
+
+```bash
+TURNS=4 ./scripts/run-multiturn.sh
+```
+
+### Custom multi-turn dataset
+
+The `datasets/multiturn-conversations.jsonl` file contains pre-built conversation histories. Each prompt is a list of `{"role": ..., "content": ...}` messages:
+
+```bash
+DATASET=datasets/multiturn-conversations.jsonl ./scripts/run-custom-dataset.sh
+```
+
+### What to look for
+
+- **TTFT increases across turns**: as the conversation grows, the prompt gets longer and TTFT should increase proportionally. A sharp spike may indicate prefix caching is not working.
+- **ITL stability**: inter-token latency should stay relatively consistent regardless of conversation length.
+- **Throughput drop at higher turn counts**: more turns means more tokens per request, which reduces throughput — quantify how much.
