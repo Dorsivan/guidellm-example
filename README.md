@@ -231,20 +231,49 @@ The CSV output is ready for spreadsheet analysis or import into Grafana/BI tools
 
 GuideLLM supports multi-turn benchmarks to simulate realistic chat workloads. This is useful for measuring how your model handles conversation context and how the serving infrastructure manages KV cache across turns.
 
-### Synthetic multi-turn
-
-Generate multi-turn conversations on the fly with the `turns` parameter:
-
-```bash
-TURNS=4 ./scripts/run-multiturn.sh
-```
-
 ### Custom multi-turn dataset
 
-The `datasets/multiturn-conversations.jsonl` file contains pre-built conversation histories. Each prompt is a list of `{"role": ..., "content": ...}` messages:
+The `datasets/multiturn-conversations.jsonl` file contains multi-turn conversations using **turn-suffixed columns**:
+
+```json
+{"prompt-0": "What is KV cache?", "output_tokens_count-0": 256, "prompt-1": "How does PagedAttention improve it?", "output_tokens_count-1": 256}
+```
+
+Each turn gets its own numbered column: `prompt-0`, `prompt-1`, `prompt-2`, etc. Optionally add `output_tokens_count-0`, `output_tokens_count-1` to control response length per turn.
+
+Run it with:
+
+```bash
+podman run --rm \
+  -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
+  -v "$(pwd)/datasets:/datasets:ro,z" \
+  -v "$(pwd)/results:/results:z" \
+  ghcr.io/vllm-project/guidellm:stable \
+  run \
+    --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
+    --data '{"kind": "json_file", "path": "/datasets/multiturn-conversations.jsonl", "load_kwargs": {"split": "train"}}' \
+    --data-preprocessor kind=turn_pivot \
+    --profile kind=sweep,sweep_size=6 \
+    --constraint kind=max_duration,seconds=60 \
+    --output kind=json,path=/results/benchmark.json \
+    --output kind=csv,path=/results/benchmark.csv \
+    --output kind=html,path=/results/benchmark.html
+```
+
+> **Note:** You must pass `"load_kwargs": {"split": "train"}` to avoid the `DatasetDict has no attribute 'info'` error, and `--data-preprocessor kind=turn_pivot` to properly pivot the turn columns.
+
+Or using the script:
 
 ```bash
 DATASET=datasets/multiturn-conversations.jsonl ./scripts/run-custom-dataset.sh
+```
+
+### Synthetic multi-turn
+
+Generate multi-turn conversations on the fly with the `turns` parameter (requires a tokenizer):
+
+```bash
+TURNS=4 ./scripts/run-multiturn.sh
 ```
 
 ### What to look for

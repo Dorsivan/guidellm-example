@@ -30,6 +30,16 @@ case "${EXT}" in
   *)          echo "Unsupported file extension: .${EXT}"; exit 1 ;;
 esac
 
+DATASET_FILENAME="$(basename "${DATASET}")"
+DATA_ARG="{\"kind\": \"${DATA_KIND}\", \"path\": \"/datasets/${DATASET_FILENAME}\", \"load_kwargs\": {\"split\": \"train\"}}"
+
+# Detect multi-turn datasets (files containing prompt-0, prompt-1 columns)
+PREPROCESSOR_ARGS=()
+if head -1 "${DATASET_PATH}" | grep -q '"prompt-[0-9]"'; then
+  echo "Detected multi-turn dataset — enabling turn_pivot preprocessor"
+  PREPROCESSOR_ARGS=(--data-preprocessor kind=turn_pivot)
+fi
+
 echo "Running benchmark with custom dataset: ${DATASET}"
 echo "Data kind: ${DATA_KIND}"
 
@@ -40,7 +50,8 @@ podman run --rm \
   "${GUIDELLM_IMAGE}" \
   run \
     --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
-    --data kind="${DATA_KIND}",path="/datasets/$(basename "${DATASET}")" \
+    --data "${DATA_ARG}" \
+    "${PREPROCESSOR_ARGS[@]}" \
     --profile kind=sweep,sweep_size=6 \
     --constraint kind=max_duration,seconds="${DURATION}" \
     --seed kind=static,value=42 \
