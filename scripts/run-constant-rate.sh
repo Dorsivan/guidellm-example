@@ -18,7 +18,7 @@ podman run --rm \
   -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
   -v "${RESULTS_DIR}:/results:z" \
   "${GUIDELLM_IMAGE}" \
-  guidellm run \
+  run \
     --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
     --data kind=synthetic_text,prompt_tokens=256,output_tokens=128 \
     --profile kind=constant,rate="${RATE}",max_concurrency=32 \

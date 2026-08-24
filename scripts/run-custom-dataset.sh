@@ -38,7 +38,7 @@ podman run --rm \
   -v "${REPO_DIR}/datasets:/datasets:ro,z" \
   -v "${RESULTS_DIR}:/results:z" \
   "${GUIDELLM_IMAGE}" \
-  guidellm run \
+  run \
     --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
     --data kind="${DATA_KIND}",path="/datasets/$(basename "${DATASET}")" \
     --profile kind=sweep,sweep_size=6 \

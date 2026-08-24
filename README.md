@@ -54,7 +54,7 @@ podman run --rm \
   -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
   -v "$(pwd)/results:/results:z" \
   ghcr.io/vllm-project/guidellm:stable \
-  guidellm run \
+  run \
     --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
     --data kind=synthetic_text,prompt_tokens=256,output_tokens=128 \
     --profile kind=sweep,sweep_size=6 \
@@ -150,7 +150,7 @@ podman run --rm \
   -v "$(pwd)/datasets:/datasets:ro,z" \
   -v "$(pwd)/results:/results:z" \
   ghcr.io/vllm-project/guidellm:stable \
-  guidellm run \
+  run \
     --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
     --data kind=json_file,path=/datasets/prompts.jsonl \
     --profile kind=sweep,sweep_size=6 \
@@ -165,7 +165,7 @@ podman run --rm \
   -v "$(pwd)/datasets:/datasets:ro,z" \
   -v "$(pwd)/results:/results:z" \
   ghcr.io/vllm-project/guidellm:stable \
-  guidellm run \
+  run \
     --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
     --data kind=csv_file,path=/datasets/prompts.csv \
     --profile kind=sweep,sweep_size=6 \
@@ -177,7 +177,7 @@ podman run --rm \
   -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
   -v "$(pwd)/results:/results:z" \
   ghcr.io/vllm-project/guidellm:stable \
-  guidellm run \
+  run \
     --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
     --data kind=huggingface,source=garage-bAInd/Open-Platypus \
     --profile kind=sweep,sweep_size=6 \
@@ -195,7 +195,7 @@ podman run --rm \
   -v "$(pwd):/workspace:ro,z" \
   -v "$(pwd)/results:/results:z" \
   ghcr.io/vllm-project/guidellm:stable \
-  guidellm run \
+  run \
     --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
     --data kind=json_file,path=/workspace/my-data.jsonl \
     --data-column-mapper '{"kind":"generative_column_mapper","column_mappings":{"text_column":"user_query","output_tokens_count_column":"max_tokens"}}' \
