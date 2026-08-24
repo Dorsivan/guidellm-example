@@ -1,0 +1,11 @@
+prompt,output_tokens_count
+"Explain the concept of transfer learning in deep learning and how it reduces training time.",256
+"Write a Python function that implements binary search on a sorted list. Include error handling.",128
+"What are the key differences between TCP and UDP? When would you choose one over the other?",200
+"Describe the CAP theorem in distributed systems and give a real-world example for each trade-off.",300
+"Write a SQL query that finds the top 5 customers by total order value in the last 30 days, including their names and emails.",100
+"Explain how a transformer model's self-attention mechanism works, step by step.",350
+"What is Kubernetes pod autoscaling and how does the Horizontal Pod Autoscaler decide when to scale?",250
+"Write a bash script that monitors disk usage on all mounted filesystems and sends an alert if any exceeds 90%.",150
+"Compare and contrast microservices architecture with a monolithic architecture. What are the operational trade-offs?",300
+"Explain how GPU memory management works in the context of serving large language models with techniques like paged attention.",400

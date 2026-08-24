@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: guidellm-nightly
+  namespace: guidellm-nightly
+  labels:
+    app.kubernetes.io/name: guidellm-nightly
+    app.kubernetes.io/component: benchmark
+spec:
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: guidellm-nightly
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: guidellm
+              image: ghcr.io/vllm-project/guidellm:latest
+              command: ["/bin/bash", "/scripts/run-nightly.sh"]
+              env:
+                - name: RHOAI_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: guidellm-rhoai-credentials
+                      key: endpoint
+                - name: RHOAI_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: guidellm-rhoai-credentials
+                      key: token
+                - name: MODEL_NAME
+                  value: "glm5.2"
+              resources:
+                requests:
+                  cpu: "2"
+                  memory: 4Gi
+                limits:
+                  cpu: "4"
+                  memory: 8Gi
+              volumeMounts:
+                - name: benchmark-script
+                  mountPath: /scripts
+                  readOnly: true
+                - name: dataset
+                  mountPath: /datasets
+                  readOnly: true
+                - name: results
+                  mountPath: /results
+          volumes:
+            - name: benchmark-script
+              configMap:
+                name: guidellm-nightly-script
+                defaultMode: 0755
+            - name: dataset
+              configMap:
+                name: guidellm-nightly-dataset
+            - name: results
+              persistentVolumeClaim:
+                claimName: guidellm-nightly-results

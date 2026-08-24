@@ -1,0 +1,10 @@
+{"prompt": "Implement a rate limiter in Python using the token bucket algorithm. It should support configurable rate and burst size.", "output_tokens_count": 300}
+{"prompt": "Write a REST API endpoint in Go that accepts a JSON payload, validates it against a schema, and stores it in PostgreSQL.", "output_tokens_count": 350}
+{"prompt": "Create a Python decorator that retries a function up to N times with exponential backoff on specific exception types.", "output_tokens_count": 200}
+{"prompt": "Write a Kubernetes operator in Go that watches for a custom resource and creates a Deployment and Service for each instance.", "output_tokens_count": 500}
+{"prompt": "Implement a simple in-memory key-value store in Rust that supports GET, SET, DELETE, and TTL-based expiration.", "output_tokens_count": 400}
+{"prompt": "Write a Python script that parses Apache access logs and generates a summary report with top IPs, status codes, and request paths.", "output_tokens_count": 250}
+{"prompt": "Create a GitHub Actions workflow that builds a container image, runs tests, scans for vulnerabilities with Trivy, and pushes to a registry.", "output_tokens_count": 200}
+{"prompt": "Write a React component that implements an infinite scroll list with virtualization for rendering 100k+ items efficiently.", "output_tokens_count": 350}
+{"prompt": "Implement a producer-consumer pattern in Java using BlockingQueue with graceful shutdown handling.", "output_tokens_count": 250}
+{"prompt": "Write a Helm chart template for deploying a stateful application with PersistentVolumeClaims, ConfigMaps, and health checks.", "output_tokens_count": 300}

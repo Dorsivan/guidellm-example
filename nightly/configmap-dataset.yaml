@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guidellm-nightly-dataset
+  namespace: guidellm-nightly
+data:
+  prompts.jsonl: |
+    {"prompt": "Explain the concept of transfer learning in deep learning and how it reduces training time.", "output_tokens_count": 256}
+    {"prompt": "Write a Python function that implements binary search on a sorted list. Include error handling.", "output_tokens_count": 128}
+    {"prompt": "What are the key differences between TCP and UDP? When would you choose one over the other?", "output_tokens_count": 200}
+    {"prompt": "Describe the CAP theorem in distributed systems and give a real-world example for each trade-off.", "output_tokens_count": 300}
+    {"prompt": "Write a SQL query that finds the top 5 customers by total order value in the last 30 days, including their names and emails.", "output_tokens_count": 100}
+    {"prompt": "Explain how a transformer model's self-attention mechanism works, step by step.", "output_tokens_count": 350}
+    {"prompt": "What is Kubernetes pod autoscaling and how does the Horizontal Pod Autoscaler decide when to scale?", "output_tokens_count": 250}
+    {"prompt": "Write a bash script that monitors disk usage on all mounted filesystems and sends an alert if any exceeds 90%.", "output_tokens_count": 150}
+    {"prompt": "Compare and contrast microservices architecture with a monolithic architecture. What are the operational trade-offs?", "output_tokens_count": 300}
+    {"prompt": "Explain how GPU memory management works in the context of serving large language models with techniques like paged attention.", "output_tokens_count": 400}

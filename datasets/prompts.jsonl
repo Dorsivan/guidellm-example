@@ -1,0 +1,20 @@
+{"prompt": "Explain the concept of transfer learning in deep learning and how it reduces training time.", "output_tokens_count": 256}
+{"prompt": "Write a Python function that implements binary search on a sorted list. Include error handling.", "output_tokens_count": 128}
+{"prompt": "What are the key differences between TCP and UDP? When would you choose one over the other?", "output_tokens_count": 200}
+{"prompt": "Describe the CAP theorem in distributed systems and give a real-world example for each trade-off.", "output_tokens_count": 300}
+{"prompt": "Write a SQL query that finds the top 5 customers by total order value in the last 30 days, including their names and emails.", "output_tokens_count": 100}
+{"prompt": "Explain how a transformer model's self-attention mechanism works, step by step.", "output_tokens_count": 350}
+{"prompt": "What is Kubernetes pod autoscaling and how does the Horizontal Pod Autoscaler decide when to scale?", "output_tokens_count": 250}
+{"prompt": "Write a bash script that monitors disk usage on all mounted filesystems and sends an alert if any exceeds 90%.", "output_tokens_count": 150}
+{"prompt": "Compare and contrast microservices architecture with a monolithic architecture. What are the operational trade-offs?", "output_tokens_count": 300}
+{"prompt": "Explain how GPU memory management works in the context of serving large language models with techniques like paged attention.", "output_tokens_count": 400}
+{"prompt": "Write a Python class that implements a thread-safe LRU cache with a configurable maximum size.", "output_tokens_count": 200}
+{"prompt": "What is the difference between symmetric and asymmetric encryption? Give an example use case for each.", "output_tokens_count": 200}
+{"prompt": "Describe the process of fine-tuning a large language model using LoRA. What are the advantages over full fine-tuning?", "output_tokens_count": 300}
+{"prompt": "Write a Dockerfile for a Python Flask application that uses multi-stage builds to minimize the final image size.", "output_tokens_count": 150}
+{"prompt": "Explain how Red Hat OpenShift AI serves machine learning models and what components are involved in the inference pipeline.", "output_tokens_count": 350}
+{"prompt": "What are the SOLID principles in software engineering? Give a brief code example for each principle.", "output_tokens_count": 500}
+{"prompt": "Write a Go function that reads a large CSV file line by line and processes each row concurrently using goroutines with a worker pool.", "output_tokens_count": 200}
+{"prompt": "Explain the difference between batch inference and real-time inference for ML models. When should you use each?", "output_tokens_count": 250}
+{"prompt": "Describe how vLLM uses PagedAttention to efficiently manage GPU memory when serving multiple concurrent requests.", "output_tokens_count": 300}
+{"prompt": "Write a Kubernetes CronJob manifest that runs a database backup every day at 2 AM and stores the result in a PersistentVolumeClaim.", "output_tokens_count": 150}

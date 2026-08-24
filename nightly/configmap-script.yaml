@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guidellm-nightly-script
+  namespace: guidellm-nightly
+data:
+  run-nightly.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    RUN_DATE=$(date +%Y-%m-%d)
+    RESULTS_DIR="/results/${RUN_DATE}"
+    mkdir -p "${RESULTS_DIR}/synthetic" "${RESULTS_DIR}/custom"
+
+    BACKEND="kind=openai_http,target=${RHOAI_ENDPOINT},api_key=${RHOAI_TOKEN},model=${MODEL_NAME}"
+
+    echo "=== GuideLLM Nightly Benchmark — ${RUN_DATE} ==="
+    echo "Endpoint: ${RHOAI_ENDPOINT}"
+    echo "Model:    ${MODEL_NAME}"
+    echo ""
+
+    # --- Synthetic sweep benchmark ---
+    echo ">>> [1/2] Running synthetic sweep benchmark..."
+    guidellm run \
+      --backend "${BACKEND}" \
+      --data kind=synthetic_text,prompt_tokens=256,output_tokens=128 \
+      --profile kind=sweep,sweep_size=6 \
+      --constraint kind=max_duration,seconds=120 \
+      --output kind=json,path="${RESULTS_DIR}/synthetic/benchmarks.json" \
+      --output kind=csv,path="${RESULTS_DIR}/synthetic/benchmarks.csv" \
+      --output kind=html,path="${RESULTS_DIR}/synthetic/benchmarks.html"
+    echo ">>> Synthetic sweep complete."
+    echo ""
+
+    # --- Custom dataset benchmark ---
+    echo ">>> [2/2] Running custom dataset benchmark..."
+    guidellm run \
+      --backend "${BACKEND}" \
+      --data kind=json_file,path=/datasets/prompts.jsonl \
+      --profile kind=sweep,sweep_size=6 \
+      --constraint kind=max_duration,seconds=120 \
+      --output kind=json,path="${RESULTS_DIR}/custom/benchmarks.json" \
+      --output kind=csv,path="${RESULTS_DIR}/custom/benchmarks.csv" \
+      --output kind=html,path="${RESULTS_DIR}/custom/benchmarks.html"
+    echo ">>> Custom dataset benchmark complete."
+    echo ""
+
+    # --- Print summary ---
+    echo "=== Results Summary ==="
+    python3 -c "
+    import json, sys, os
+
+    for label, path in [('Synthetic', '${RESULTS_DIR}/synthetic/benchmarks.json'),
+                         ('Custom',    '${RESULTS_DIR}/custom/benchmarks.json')]:
+        if not os.path.exists(path):
+            print(f'{label}: no results file found')
+            continue
+        with open(path) as f:
+            data = json.load(f)
+        benchmarks = data if isinstance(data, list) else data.get('benchmarks', [data])
+        print(f'\n--- {label} ---')
+        for i, bench in enumerate(benchmarks):
+            stats = bench.get('stats', bench)
+            print(f'  Strategy {i+1}:')
+            for key in ['request_rate', 'request_concurrency',
+                        'request_latency_seconds_mean', 'request_latency_seconds_p99',
+                        'time_to_first_token_seconds_mean', 'time_to_first_token_seconds_p99',
+                        'inter_token_latency_seconds_mean', 'inter_token_latency_seconds_p99',
+                        'output_tokens_per_second_mean', 'total_tokens_per_second',
+                        'completed_request_rate', 'error_rate']:
+                val = stats.get(key)
+                if val is not None:
+                    print(f'    {key}: {val}')
+    "
+
+    echo ""
+    echo "=== Nightly benchmark finished. Results at: ${RESULTS_DIR} ==="
