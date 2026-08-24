@@ -216,6 +216,25 @@ export RHOAI_TOKEN="sha256~your-token-here"
 export MODEL_NAME="glm5.2"
 ```
 
+## Air-Gapped / Closed Network Usage
+
+If your environment cannot reach HuggingFace (e.g., air-gapped clusters), set these environment variables to prevent GuideLLM from attempting tokenizer downloads:
+
+```bash
+export TRANSFORMERS_OFFLINE=1
+export HF_HUB_OFFLINE=1
+export GUIDELLM__PREFERRED_PROMPT_TOKENS_SOURCE=server
+export GUIDELLM__PREFERRED_OUTPUT_TOKENS_SOURCE=server
+```
+
+With file-based datasets (`json_file`, `csv_file`), token counts come from your `output_tokens_count` fields and the server's usage stats, so no tokenizer is needed.
+
+For synthetic datasets, you can either:
+- Pre-download a tokenizer and mount it into the container
+- Use `--tokenizer '{"kind": "huggingface_auto", "model": "gpt2"}'` if gpt2 is cached locally
+
+Add `-e TRANSFORMERS_OFFLINE=1 -e HF_HUB_OFFLINE=1` to all `podman run` commands in this scenario.
+
 ## Interpreting Results
 
 After a sweep, check the HTML report (`results/sweep.html`) for visual charts. Key things to look for:
@@ -236,10 +255,12 @@ GuideLLM supports multi-turn benchmarks to simulate realistic chat workloads. Th
 The `datasets/multiturn-conversations.jsonl` file contains multi-turn conversations using **turn-suffixed columns**:
 
 ```json
-{"prompt-0": "What is KV cache?", "output_tokens_count-0": 256, "prompt-1": "How does PagedAttention improve it?", "output_tokens_count-1": 256}
+{"prefix": "You are a helpful assistant.", "prompt_0": "What is KV cache?", "output_tokens_count_0": 256, "prompt_1": "How does PagedAttention improve it?", "output_tokens_count_1": 256}
 ```
 
-Each turn gets its own numbered column: `prompt-0`, `prompt-1`, `prompt-2`, etc. Optionally add `output_tokens_count-0`, `output_tokens_count-1` to control response length per turn.
+Each turn gets its own numbered column: `prompt_0`, `prompt_1`, `prompt_2`, etc. (hyphens like `prompt-0` also work). Optionally add `output_tokens_count_0`, `output_tokens_count_1` to control response length per turn. The `prefix` field sets the system message.
+
+GuideLLM captures the model's response from each turn and includes it as conversation history in subsequent turns, building a proper `[system, user, assistant, user, assistant, ...]` messages array — so the model sees the full conversation context, just like a real chat.
 
 Run it with:
 
@@ -278,6 +299,7 @@ TURNS=4 ./scripts/run-multiturn.sh
 
 ### What to look for
 
-- **TTFT increases across turns**: as the conversation grows, the prompt gets longer and TTFT should increase proportionally. A sharp spike may indicate prefix caching is not working.
+- **TTFT increases across turns**: as the conversation grows, the prompt includes all prior turns (user + assistant messages), so TTFT should increase proportionally. A sharp spike may indicate prefix caching is not working.
 - **ITL stability**: inter-token latency should stay relatively consistent regardless of conversation length.
 - **Throughput drop at higher turn counts**: more turns means more tokens per request, which reduces throughput — quantify how much.
+- **Token count growth**: later turns carry the full conversation history, so input token counts grow with each turn. Check `prompt_tokens` in the results to verify the model is receiving the expected context size.
