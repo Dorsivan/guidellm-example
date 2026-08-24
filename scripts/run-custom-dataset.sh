@@ -6,6 +6,7 @@ set -euo pipefail
 : "${MODEL_NAME:=glm5.2}"
 : "${DATASET:=datasets/prompts.jsonl}"
 : "${DURATION:=120}"
+: "${GUIDELLM_IMAGE:=ghcr.io/vllm-project/guidellm:stable}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="${SCRIPT_DIR}/.."
@@ -32,14 +33,19 @@ esac
 echo "Running benchmark with custom dataset: ${DATASET}"
 echo "Data kind: ${DATA_KIND}"
 
-guidellm run \
-  --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
-  --data kind="${DATA_KIND}",path="${DATASET_PATH}" \
-  --profile kind=sweep,sweep_size=6 \
-  --constraint kind=max_duration,seconds="${DURATION}" \
-  --seed kind=static,value=42 \
-  --output kind=json,path="${RESULTS_DIR}/benchmark.json" \
-  --output kind=csv,path="${RESULTS_DIR}/benchmark.csv" \
-  --output kind=html,path="${RESULTS_DIR}/benchmark.html"
+podman run --rm \
+  -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
+  -v "${REPO_DIR}/datasets:/datasets:ro,z" \
+  -v "${RESULTS_DIR}:/results:z" \
+  "${GUIDELLM_IMAGE}" \
+  guidellm run \
+    --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
+    --data kind="${DATA_KIND}",path="/datasets/$(basename "${DATASET}")" \
+    --profile kind=sweep,sweep_size=6 \
+    --constraint kind=max_duration,seconds="${DURATION}" \
+    --seed kind=static,value=42 \
+    --output kind=json,path=/results/benchmark.json \
+    --output kind=csv,path=/results/benchmark.csv \
+    --output kind=html,path=/results/benchmark.html
 
 echo "Benchmark complete. Results saved to ${RESULTS_DIR}"

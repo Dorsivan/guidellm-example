@@ -23,13 +23,23 @@ Reports are generated in JSON, CSV, and HTML formats. The HTML report includes i
 
 ## Prerequisites
 
-- Python 3.10+
+- `podman` or `docker`
 - Access to a GLM 5.2 model served on RHOAI (OpenAI-compatible `/v1/chat/completions` endpoint)
 - An API token for the RHOAI inference endpoint
 
-```bash
-pip install "guidellm[recommended]"
+## Container Image
+
+All scripts in this repo run GuideLLM via its container image:
+
 ```
+ghcr.io/vllm-project/guidellm:stable
+```
+
+> **Important: use `stable`, not `latest`.** The `latest` tag may point to a pre-release
+> that is **amd64-only**. The `stable` tag (and pinned `vX.Y.Z` tags from v0.7.0+) are
+> multi-arch manifests that support both **linux/amd64** and **linux/arm64**.
+> If you see `exec format error` or `image platform does not match`, switch to `stable`
+> or a specific release tag. See [issue #498](https://github.com/vllm-project/guidellm/issues/498).
 
 ## Quick Start
 
@@ -40,14 +50,18 @@ export RHOAI_TOKEN="sha256~your-token-here"
 export MODEL_NAME="glm5.2"
 
 # Run a quick 60-second sweep benchmark with synthetic data
-guidellm run \
-  --backend kind=openai_http,target=${RHOAI_ENDPOINT},api_key=${RHOAI_TOKEN},model=${MODEL_NAME} \
-  --data kind=synthetic_text,prompt_tokens=256,output_tokens=128 \
-  --profile kind=sweep,sweep_size=6 \
-  --constraint kind=max_duration,seconds=60 \
-  --output kind=json,path=results/sweep.json \
-  --output kind=csv,path=results/sweep.csv \
-  --output kind=html,path=results/sweep.html
+podman run --rm \
+  -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
+  -v "$(pwd)/results:/results:z" \
+  ghcr.io/vllm-project/guidellm:stable \
+  guidellm run \
+    --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
+    --data kind=synthetic_text,prompt_tokens=256,output_tokens=128 \
+    --profile kind=sweep,sweep_size=6 \
+    --constraint kind=max_duration,seconds=60 \
+    --output kind=json,path=/results/sweep.json \
+    --output kind=csv,path=/results/sweep.csv \
+    --output kind=html,path=/results/sweep.html
 ```
 
 ## Repository Structure
@@ -127,34 +141,48 @@ prompt,output_tokens_count
 
 ### Run with your own dataset
 
+Mount your dataset into the container and reference the in-container path:
+
 ```bash
 # JSONL
-guidellm run \
-  --backend kind=openai_http,target=${RHOAI_ENDPOINT},api_key=${RHOAI_TOKEN},model=${MODEL_NAME} \
-  --data kind=json_file,path=datasets/prompts.jsonl \
-  --profile kind=sweep,sweep_size=6 \
-  --constraint kind=max_duration,seconds=60
+podman run --rm \
+  -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
+  -v "$(pwd)/datasets:/datasets:ro,z" \
+  -v "$(pwd)/results:/results:z" \
+  ghcr.io/vllm-project/guidellm:stable \
+  guidellm run \
+    --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
+    --data kind=json_file,path=/datasets/prompts.jsonl \
+    --profile kind=sweep,sweep_size=6 \
+    --constraint kind=max_duration,seconds=60 \
+    --output kind=json,path=/results/benchmark.json \
+    --output kind=csv,path=/results/benchmark.csv \
+    --output kind=html,path=/results/benchmark.html
 
 # CSV
-guidellm run \
-  --backend kind=openai_http,target=${RHOAI_ENDPOINT},api_key=${RHOAI_TOKEN},model=${MODEL_NAME} \
-  --data kind=csv_file,path=datasets/prompts.csv \
-  --profile kind=sweep,sweep_size=6 \
-  --constraint kind=max_duration,seconds=60
+podman run --rm \
+  -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
+  -v "$(pwd)/datasets:/datasets:ro,z" \
+  -v "$(pwd)/results:/results:z" \
+  ghcr.io/vllm-project/guidellm:stable \
+  guidellm run \
+    --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
+    --data kind=csv_file,path=/datasets/prompts.csv \
+    --profile kind=sweep,sweep_size=6 \
+    --constraint kind=max_duration,seconds=60 \
+    --output kind=json,path=/results/benchmark.json
 
-# HuggingFace dataset
-guidellm run \
-  --backend kind=openai_http,target=${RHOAI_ENDPOINT},api_key=${RHOAI_TOKEN},model=${MODEL_NAME} \
-  --data kind=huggingface,source=garage-bAInd/Open-Platypus \
-  --profile kind=sweep,sweep_size=6 \
-  --constraint kind=max_duration,seconds=60
-
-# Plain text file (one prompt per line)
-guidellm run \
-  --backend kind=openai_http,target=${RHOAI_ENDPOINT},api_key=${RHOAI_TOKEN},model=${MODEL_NAME} \
-  --data kind=text_file,path=my-prompts.txt \
-  --profile kind=sweep,sweep_size=6 \
-  --constraint kind=max_duration,seconds=60
+# HuggingFace dataset (no mount needed)
+podman run --rm \
+  -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
+  -v "$(pwd)/results:/results:z" \
+  ghcr.io/vllm-project/guidellm:stable \
+  guidellm run \
+    --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
+    --data kind=huggingface,source=garage-bAInd/Open-Platypus \
+    --profile kind=sweep,sweep_size=6 \
+    --constraint kind=max_duration,seconds=60 \
+    --output kind=json,path=/results/benchmark.json
 ```
 
 ### Custom Column Mapping
@@ -162,12 +190,18 @@ guidellm run \
 If your dataset uses non-standard column names, use `--data-column-mapper`:
 
 ```bash
-guidellm run \
-  --backend kind=openai_http,target=${RHOAI_ENDPOINT},api_key=${RHOAI_TOKEN},model=${MODEL_NAME} \
-  --data kind=json_file,path=my-data.jsonl \
-  --data-column-mapper '{"kind":"generative_column_mapper","column_mappings":{"text_column":"user_query","output_tokens_count_column":"max_tokens"}}' \
-  --profile kind=throughput \
-  --constraint kind=max_requests,count=500
+podman run --rm \
+  -e RHOAI_ENDPOINT -e RHOAI_TOKEN -e MODEL_NAME \
+  -v "$(pwd):/workspace:ro,z" \
+  -v "$(pwd)/results:/results:z" \
+  ghcr.io/vllm-project/guidellm:stable \
+  guidellm run \
+    --backend kind=openai_http,target="${RHOAI_ENDPOINT}",api_key="${RHOAI_TOKEN}",model="${MODEL_NAME}" \
+    --data kind=json_file,path=/workspace/my-data.jsonl \
+    --data-column-mapper '{"kind":"generative_column_mapper","column_mappings":{"text_column":"user_query","output_tokens_count_column":"max_tokens"}}' \
+    --profile kind=throughput \
+    --constraint kind=max_requests,count=500 \
+    --output kind=json,path=/results/benchmark.json
 ```
 
 ## Environment Variables
