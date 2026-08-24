@@ -33,9 +33,9 @@ esac
 DATASET_FILENAME="$(basename "${DATASET}")"
 DATA_ARG="{\"kind\": \"${DATA_KIND}\", \"path\": \"/datasets/${DATASET_FILENAME}\", \"load_kwargs\": {\"split\": \"train\"}}"
 
-# Detect multi-turn datasets (files containing prompt-0, prompt-1 columns)
+# Detect multi-turn datasets (files containing prompt-0/prompt_0, prompt-1/prompt_1 columns)
 PREPROCESSOR_ARGS=()
-if head -1 "${DATASET_PATH}" | grep -q '"prompt-[0-9]"'; then
+if head -1 "${DATASET_PATH}" | grep -qE '"prompt[-_][0-9]"'; then
   echo "Detected multi-turn dataset — enabling turn_pivot preprocessor"
   PREPROCESSOR_ARGS=(--data-preprocessor kind=turn_pivot)
 fi
