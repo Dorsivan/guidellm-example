@@ -1,0 +1,1795 @@
+# PIPELINE DEFINITION
+# Name: guidellm-benchmark-pipeline
+# Description: Sequential GuideLLM load tests with separate steps for each test and each redeployment. Supports up to 5 test slots, timeout-aware graceful exit, a final Markdown report, and model cleanup.
+# Inputs:
+#    cleanup_configmap: str [Default: '']
+#    model_name: str [Default: 'glm5.2']
+#    namespace: str [Default: 'guidellm-nightly']
+#    redeploy_configmaps: str [Default: '[]']
+#    test_configs: str [Default: '[{"name": "small-128-64", "prompt_tokens": 128, "output_tokens": 64, "duration": 120}, {"name": "medium-256-128", "prompt_tokens": 256, "output_tokens": 128, "duration": 120}, {"name": "large-512-256", "prompt_tokens": 512, "output_tokens": 256, "duration": 120}]']
+#    timeout_minutes: int [Default: 120.0]
+components:
+  comp-exit-handler-1:
+    dag:
+      tasks:
+        redeploy-model:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-redeploy-model
+          dependentTasks:
+          - run-single-test
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              namespace:
+                componentInputParameter: pipelinechannel--namespace
+              redeploy_configmaps_json:
+                componentInputParameter: pipelinechannel--redeploy_configmaps
+              redeploy_index:
+                runtimeValue:
+                  constant: 0.0
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+          taskInfo:
+            name: Redeploy 0
+        redeploy-model-2:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-redeploy-model-2
+          dependentTasks:
+          - run-single-test-2
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              namespace:
+                componentInputParameter: pipelinechannel--namespace
+              redeploy_configmaps_json:
+                componentInputParameter: pipelinechannel--redeploy_configmaps
+              redeploy_index:
+                runtimeValue:
+                  constant: 1.0
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+          taskInfo:
+            name: Redeploy 1
+        redeploy-model-3:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-redeploy-model-3
+          dependentTasks:
+          - run-single-test-3
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              namespace:
+                componentInputParameter: pipelinechannel--namespace
+              redeploy_configmaps_json:
+                componentInputParameter: pipelinechannel--redeploy_configmaps
+              redeploy_index:
+                runtimeValue:
+                  constant: 2.0
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+          taskInfo:
+            name: Redeploy 2
+        redeploy-model-4:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-redeploy-model-4
+          dependentTasks:
+          - run-single-test-4
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              namespace:
+                componentInputParameter: pipelinechannel--namespace
+              redeploy_configmaps_json:
+                componentInputParameter: pipelinechannel--redeploy_configmaps
+              redeploy_index:
+                runtimeValue:
+                  constant: 3.0
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+          taskInfo:
+            name: Redeploy 3
+        run-single-test:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-run-single-test
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              model_name:
+                componentInputParameter: pipelinechannel--model_name
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+              test_configs_json:
+                componentInputParameter: pipelinechannel--test_configs
+              test_index:
+                runtimeValue:
+                  constant: 0.0
+          taskInfo:
+            name: Test 0
+        run-single-test-2:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-run-single-test-2
+          dependentTasks:
+          - redeploy-model
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              model_name:
+                componentInputParameter: pipelinechannel--model_name
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+              test_configs_json:
+                componentInputParameter: pipelinechannel--test_configs
+              test_index:
+                runtimeValue:
+                  constant: 1.0
+          taskInfo:
+            name: Test 1
+        run-single-test-3:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-run-single-test-3
+          dependentTasks:
+          - redeploy-model-2
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              model_name:
+                componentInputParameter: pipelinechannel--model_name
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+              test_configs_json:
+                componentInputParameter: pipelinechannel--test_configs
+              test_index:
+                runtimeValue:
+                  constant: 2.0
+          taskInfo:
+            name: Test 2
+        run-single-test-4:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-run-single-test-4
+          dependentTasks:
+          - redeploy-model-3
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              model_name:
+                componentInputParameter: pipelinechannel--model_name
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+              test_configs_json:
+                componentInputParameter: pipelinechannel--test_configs
+              test_index:
+                runtimeValue:
+                  constant: 3.0
+          taskInfo:
+            name: Test 3
+        run-single-test-5:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-run-single-test-5
+          dependentTasks:
+          - redeploy-model-4
+          inputs:
+            parameters:
+              deadline_epoch:
+                componentInputParameter: pipelinechannel--setup-run-deadline_epoch
+              model_name:
+                componentInputParameter: pipelinechannel--model_name
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+              test_configs_json:
+                componentInputParameter: pipelinechannel--test_configs
+              test_index:
+                runtimeValue:
+                  constant: 4.0
+          taskInfo:
+            name: Test 4
+    inputDefinitions:
+      parameters:
+        pipelinechannel--model_name:
+          parameterType: STRING
+        pipelinechannel--namespace:
+          parameterType: STRING
+        pipelinechannel--redeploy_configmaps:
+          parameterType: STRING
+        pipelinechannel--setup-run-deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        pipelinechannel--setup-run-run_id:
+          parameterType: STRING
+        pipelinechannel--test_configs:
+          parameterType: STRING
+  comp-finalize-run:
+    executorLabel: exec-finalize-run
+    inputDefinitions:
+      parameters:
+        cleanup_configmap:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+        pvc_name:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        final_report:
+          artifactType:
+            schemaTitle: system.Markdown
+            schemaVersion: 0.0.1
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-redeploy-model:
+    executorLabel: exec-redeploy-model
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        namespace:
+          parameterType: STRING
+        redeploy_configmaps_json:
+          parameterType: STRING
+        redeploy_index:
+          parameterType: NUMBER_INTEGER
+        run_id:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-redeploy-model-2:
+    executorLabel: exec-redeploy-model-2
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        namespace:
+          parameterType: STRING
+        redeploy_configmaps_json:
+          parameterType: STRING
+        redeploy_index:
+          parameterType: NUMBER_INTEGER
+        run_id:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-redeploy-model-3:
+    executorLabel: exec-redeploy-model-3
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        namespace:
+          parameterType: STRING
+        redeploy_configmaps_json:
+          parameterType: STRING
+        redeploy_index:
+          parameterType: NUMBER_INTEGER
+        run_id:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-redeploy-model-4:
+    executorLabel: exec-redeploy-model-4
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        namespace:
+          parameterType: STRING
+        redeploy_configmaps_json:
+          parameterType: STRING
+        redeploy_index:
+          parameterType: NUMBER_INTEGER
+        run_id:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-run-single-test:
+    executorLabel: exec-run-single-test
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        model_name:
+          parameterType: STRING
+        run_id:
+          parameterType: STRING
+        test_configs_json:
+          parameterType: STRING
+        test_index:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-run-single-test-2:
+    executorLabel: exec-run-single-test-2
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        model_name:
+          parameterType: STRING
+        run_id:
+          parameterType: STRING
+        test_configs_json:
+          parameterType: STRING
+        test_index:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-run-single-test-3:
+    executorLabel: exec-run-single-test-3
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        model_name:
+          parameterType: STRING
+        run_id:
+          parameterType: STRING
+        test_configs_json:
+          parameterType: STRING
+        test_index:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-run-single-test-4:
+    executorLabel: exec-run-single-test-4
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        model_name:
+          parameterType: STRING
+        run_id:
+          parameterType: STRING
+        test_configs_json:
+          parameterType: STRING
+        test_index:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-run-single-test-5:
+    executorLabel: exec-run-single-test-5
+    inputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        model_name:
+          parameterType: STRING
+        run_id:
+          parameterType: STRING
+        test_configs_json:
+          parameterType: STRING
+        test_index:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-setup-run:
+    executorLabel: exec-setup-run
+    inputDefinitions:
+      parameters:
+        test_configs_json:
+          parameterType: STRING
+        timeout_minutes:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        deadline_epoch:
+          parameterType: NUMBER_DOUBLE
+        run_id:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-finalize-run:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - finalize_run
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kubernetes>=28.0.0'\
+          \ 'pyyaml>=6.0'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.17.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef finalize_run(\n    namespace: str,\n    cleanup_configmap: str,\n\
+          \    pvc_name: str,\n    final_report: dsl.Output[dsl.Markdown],\n) -> str:\n\
+          \    \"\"\"Generate a final Markdown report and optionally clean up the\
+          \ model.\"\"\"\n    import glob\n    import json\n    import os\n    from\
+          \ datetime import datetime, timezone\n\n    results_dir = \"/mnt/results\"\
+          \n\n    # Find the most recent run directory (by name, which is a timestamp)\n\
+          \    run_dirs = sorted(glob.glob(f\"{results_dir}/*/metadata.json\"), reverse=True)\n\
+          \    if run_dirs:\n        run_dir = os.path.dirname(run_dirs[0])\n    \
+          \    with open(run_dirs[0]) as f:\n            metadata = json.load(f)\n\
+          \    else:\n        metadata = {\n            \"run_id\": \"unknown\", \"\
+          test_configs\": [], \"total_tests\": 0,\n            \"start_time\": \"\
+          ?\", \"timeout_minutes\": \"?\",\n        }\n        run_dir = results_dir\n\
+          \n    run_id = metadata.get(\"run_id\", \"unknown\")\n    test_configs =\
+          \ metadata.get(\"test_configs\", [])\n\n    # Read all status files\n  \
+          \  tests = []\n    status_dir = f\"{run_dir}/status\"\n    for i in range(len(test_configs)):\n\
+          \        status_path = f\"{status_dir}/test_{i}.json\"\n        if os.path.exists(status_path):\n\
+          \            with open(status_path) as f:\n                tests.append(json.load(f))\n\
+          \        else:\n            tests.append({\n                \"index\": i,\n\
+          \                \"name\": test_configs[i].get(\"name\", f\"test-{i:02d}\"\
+          ),\n                \"config\": test_configs[i],\n                \"status\"\
+          : \"crashed\",\n                \"reason\": \"no status file (step may have\
+          \ been killed)\",\n            })\n\n    redeploys = []\n    for i in range(max(len(test_configs)\
+          \ - 1, 0)):\n        status_path = f\"{status_dir}/redeploy_{i}.json\"\n\
+          \        if os.path.exists(status_path):\n            with open(status_path)\
+          \ as f:\n                redeploys.append(json.load(f))\n\n    completed\
+          \ = [t for t in tests if t.get(\"status\") == \"completed\"]\n    failed\
+          \ = [t for t in tests if t.get(\"status\") == \"failed\"]\n    skipped =\
+          \ [t for t in tests if t.get(\"status\") == \"skipped\"]\n    crashed =\
+          \ [t for t in tests if t.get(\"status\") == \"crashed\"]\n\n    # Compute\
+          \ total duration from metadata start_time to now\n    total_duration = \"\
+          ?\"\n    try:\n        start = datetime.fromisoformat(metadata[\"start_time\"\
+          ])\n        total_duration = f\"{(datetime.now(timezone.utc) - start).total_seconds():.0f}\"\
+          \n    except Exception:\n        pass\n\n    timed_out = any(\n        t.get(\"\
+          reason\") == \"timeout\" for t in skipped\n    )\n\n    # ---- Build Markdown\
+          \ report ----------------------------------------\n\n    lines = [\n   \
+          \     f\"# GuideLLM Benchmark Report: {run_id}\\n\",\n        f\"**Model:**\
+          \ `{test_configs[0].get('name', '?') if test_configs else '?'}`  \",\n \
+          \       f\"**Started:** {metadata.get('start_time', '?')}  \",\n       \
+          \ f\"**Duration:** {total_duration}s  \",\n        f\"**Timeout budget:**\
+          \ {metadata.get('timeout_minutes', '?')} min  \",\n        f\"**Timed out:**\
+          \ {'Yes' if timed_out else 'No'}  \",\n        f\"**Completed:** {len(completed)}\
+          \ | **Failed:** {len(failed)} \"\n        f\"| **Skipped:** {len(skipped)}\
+          \ | **Crashed:** {len(crashed)}  \",\n        \"\",\n    ]\n\n    # Summary\
+          \ table\n    if tests:\n        lines.extend([\n            \"## Test Summary\\\
+          n\",\n            \"| # | Name | Tokens (in/out) | Profile | Status | Duration\
+          \ \"\n            \"| Throughput (tok/s) | Latency p99 (s) | TTFT p99 (s)\
+          \ |\",\n            \"|---|------|-----------------|---------|--------|----------\"\
+          \n            \"|--------------------|-----------------|--------------|\"\
+          ,\n        ])\n        for t in tests:\n            tc = t.get(\"config\"\
+          , {})\n            tokens = f\"{tc.get('prompt_tokens', '?')}/{tc.get('output_tokens',\
+          \ '?')}\"\n            prof = tc.get(\"profile\", \"sweep\")\n         \
+          \   dur = f\"{t['duration_seconds']:.0f}s\" if t.get(\"duration_seconds\"\
+          ) else \"-\"\n\n            throughput = latency_p99 = ttft_p99 = \"-\"\n\
+          \            for _, sm in t.get(\"metrics\", {}).items():\n            \
+          \    if sm.get(\"total_tokens_per_second\") is not None:\n             \
+          \       throughput = f\"{sm['total_tokens_per_second']:.1f}\"\n        \
+          \        if sm.get(\"request_latency_seconds_p99\") is not None:\n     \
+          \               latency_p99 = f\"{sm['request_latency_seconds_p99']:.3f}\"\
+          \n                if sm.get(\"time_to_first_token_seconds_p99\") is not\
+          \ None:\n                    ttft_p99 = f\"{sm['time_to_first_token_seconds_p99']:.3f}\"\
+          \n                break\n\n            status_label = {\n              \
+          \  \"completed\": \"Completed\", \"failed\": \"Failed\",\n             \
+          \   \"skipped\": \"Skipped\", \"crashed\": \"Crashed\",\n            }.get(t[\"\
+          status\"], t[\"status\"])\n\n            lines.append(\n               \
+          \ f\"| {t.get('index', '?')+1 if isinstance(t.get('index'), int) else '?'}\
+          \ \"\n                f\"| {t.get('name', '?')} | {tokens} | {prof} \"\n\
+          \                f\"| {status_label} | {dur} \"\n                f\"| {throughput}\
+          \ | {latency_p99} | {ttft_p99} |\"\n            )\n        lines.append(\"\
+          \")\n\n    # Redeployment summary\n    active_redeploys = [r for r in redeploys\
+          \ if r.get(\"status\") != \"skipped\"]\n    if active_redeploys:\n     \
+          \   lines.append(\"## Redeployments\\n\")\n        for r in active_redeploys:\n\
+          \            idx = r.get(\"index\", \"?\")\n            st = r.get(\"status\"\
+          , \"?\")\n            reason = r.get(\"reason\", \"\")\n            detail\
+          \ = f\" ({reason})\" if reason else \"\"\n            lines.append(f\"-\
+          \ Between test {idx} and {idx+1 if isinstance(idx, int) else '?'}: **{st}**{detail}\"\
+          )\n        lines.append(\"\")\n\n    # Detailed metrics per completed test\n\
+          \    for t in completed:\n        lines.append(f\"### {t.get('name', '?')}\
+          \ (detailed)\\n\")\n        metrics = t.get(\"metrics\", {})\n        if\
+          \ not metrics:\n            lines.append(\"_No detailed metrics available._\\\
+          n\")\n            continue\n        lines.extend([\n            \"| Strategy\
+          \ | Rate (req/s) | Concurrency | Throughput (tok/s) \"\n            \"|\
+          \ Latency mean (s) | Latency p99 (s) | TTFT mean (s) \"\n            \"\
+          | TTFT p99 (s) | ITL mean (s) | Error rate |\",\n            \"|----------|-------------|-------------|--------------------\"\
+          \n            \"|--------------------|-----------------|---------------\"\
+          \n            \"|--------------|--------------|------------|\",\n      \
+          \  ])\n        for sname, sm in sorted(metrics.items()):\n            def\
+          \ fmt(v):\n                return f\"{v:.4f}\" if isinstance(v, float) else\
+          \ (\n                    str(v) if v is not None else \"-\"\n          \
+          \      )\n            lines.append(\n                f\"| {sname} \"\n \
+          \               f\"| {fmt(sm.get('request_rate'))} \"\n                f\"\
+          | {fmt(sm.get('request_concurrency'))} \"\n                f\"| {fmt(sm.get('total_tokens_per_second'))}\
+          \ \"\n                f\"| {fmt(sm.get('request_latency_seconds_mean'))}\
+          \ \"\n                f\"| {fmt(sm.get('request_latency_seconds_p99'))}\
+          \ \"\n                f\"| {fmt(sm.get('time_to_first_token_seconds_mean'))}\
+          \ \"\n                f\"| {fmt(sm.get('time_to_first_token_seconds_p99'))}\
+          \ \"\n                f\"| {fmt(sm.get('inter_token_latency_seconds_mean'))}\
+          \ \"\n                f\"| {fmt(sm.get('error_rate'))} |\"\n           \
+          \ )\n        lines.append(\"\")\n\n    # Failed / skipped / crashed details\n\
+          \    for label, group in [(\"Failed\", failed), (\"Skipped\", skipped),\
+          \ (\"Crashed\", crashed)]:\n        if group:\n            lines.append(f\"\
+          ## {label} Tests\\n\")\n            for t in group:\n                lines.append(f\"\
+          - **{t.get('name', '?')}**: {t.get('reason', '?')}\")\n            lines.append(\"\
+          \")\n\n    # Access instructions\n    lines.extend([\n        \"## Accessing\
+          \ Detailed Results\\n\",\n        f\"Results are stored on PVC **`{pvc_name}`**\
+          \ under `/{run_id}/`.\\n\",\n        \"Each completed test directory contains:\"\
+          ,\n        \"- `benchmarks.html` -- Interactive visual report\",\n     \
+          \   \"- `benchmarks.json` -- Machine-readable results\",\n        \"- `benchmarks.csv`\
+          \  -- Spreadsheet-compatible data\\n\",\n        \"```bash\",\n        \"\
+          # Start a viewer pod\",\n        f\"oc run results-viewer --restart=Never\
+          \ \\\\\",\n        f\"  --image=registry.access.redhat.com/ubi9/ubi-minimal:latest\
+          \ \\\\\",\n        f\"  --overrides='{{\\\"spec\\\":{{\\\"containers\\\"\
+          :[{{\\\"name\\\":\\\"v\\\",\"\n        f\"\\\"image\\\":\\\"registry.access.redhat.com/ubi9/ubi-minimal:latest\\\
+          \",\"\n        f\"\\\"command\\\":[\\\"sleep\\\",\\\"3600\\\"],\"\n    \
+          \    f\"\\\"volumeMounts\\\":[{{\\\"name\\\":\\\"r\\\",\\\"mountPath\\\"\
+          :\\\"/results\\\"}}]}}],\"\n        f\"\\\"volumes\\\":[{{\\\"name\\\":\\\
+          \"r\\\",\"\n        f\"\\\"persistentVolumeClaim\\\":{{\\\"claimName\\\"\
+          :\\\"{pvc_name}\\\"}}}}]}}}}'\",\n        \"\",\n        \"# Copy results\
+          \ locally\",\n        f\"oc cp results-viewer:/results/{run_id}/ ./{run_id}/\"\
+          ,\n    ])\n    for t in completed:\n        lines.append(\n            f\"\
+          # oc cp results-viewer:/results/{run_id}/{t['name']}/benchmarks.html \"\n\
+          \            f\"./{t['name']}-report.html\"\n        )\n    lines.extend([\n\
+          \        \"\",\n        \"oc delete pod results-viewer\",\n        \"```\"\
+          ,\n        \"\",\n    ])\n\n    with open(final_report.path, \"w\") as f:\n\
+          \        f.write(\"\\n\".join(lines))\n\n    # ---- Cleanup model ------------------------------------------------\n\
+          \n    cleanup_status = \"not requested\"\n    if cleanup_configmap and cleanup_configmap.strip():\n\
+          \        try:\n            from kubernetes import client, config as k8s_config\n\
+          \            from kubernetes.dynamic import DynamicClient\n            import\
+          \ yaml\n\n            k8s_config.load_incluster_config()\n            v1\
+          \ = client.CoreV1Api()\n            cm = v1.read_namespaced_config_map(cleanup_configmap.strip(),\
+          \ namespace)\n\n            yaml_content = None\n            for key, value\
+          \ in (cm.data or {}).items():\n                if key.endswith((\".yaml\"\
+          , \".yml\")):\n                    yaml_content = value\n              \
+          \      break\n            if not yaml_content and cm.data:\n           \
+          \     yaml_content = list(cm.data.values())[0]\n\n            if yaml_content:\n\
+          \                resource = yaml.safe_load(yaml_content)\n             \
+          \   dyn = DynamicClient(client.ApiClient())\n                api = dyn.resources.get(\n\
+          \                    api_version=resource[\"apiVersion\"],\n           \
+          \         kind=resource[\"kind\"],\n                )\n                name\
+          \ = resource[\"metadata\"][\"name\"]\n                res_ns = resource[\"\
+          metadata\"].get(\"namespace\", namespace)\n                api.delete(name=name,\
+          \ namespace=res_ns)\n                cleanup_status = f\"deleted {resource['kind']}/{name}\
+          \ in {res_ns}\"\n            else:\n                cleanup_status = f\"\
+          no YAML data in ConfigMap {cleanup_configmap}\"\n        except Exception\
+          \ as exc:\n            cleanup_status = f\"cleanup error: {exc}\"\n\n  \
+          \  print(f\"Cleanup: {cleanup_status}\")\n    return cleanup_status\n\n"
+        image: registry.redhat.io/ubi9/python-311:latest
+    exec-redeploy-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - redeploy_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kubernetes>=28.0.0'\
+          \ 'pyyaml>=6.0'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.17.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef redeploy_model(\n    redeploy_configmaps_json: str,\n    redeploy_index:\
+          \ int,\n    run_id: str,\n    namespace: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Apply a ConfigMap's YAML to redeploy the model, then\
+          \ wait for readiness.\"\"\"\n    import json\n    import os\n    import\
+          \ ssl\n    import time\n    import urllib.request\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configmaps\
+          \ = json.loads(redeploy_configmaps_json)\n\n    def write_status(status_dict):\n\
+          \        status_dir = f\"/mnt/results/{run_id}/status\"\n        os.makedirs(status_dir,\
+          \ exist_ok=True)\n        with open(f\"{status_dir}/redeploy_{redeploy_index}.json\"\
+          , \"w\") as f:\n            json.dump(status_dict, f, indent=2)\n      \
+          \  return json.dumps(status_dict)\n\n    if redeploy_index >= len(configmaps):\n\
+          \        return write_status({\"index\": redeploy_index, \"status\": \"\
+          skipped\", \"reason\": \"no config\"})\n\n    cm_name = configmaps[redeploy_index]\n\
+          \    if not cm_name or not cm_name.strip():\n        return write_status({\"\
+          index\": redeploy_index, \"status\": \"skipped\", \"reason\": \"empty\"\
+          })\n\n    remaining = deadline_epoch - time.time()\n    if remaining <=\
+          \ 60:\n        return write_status({\"index\": redeploy_index, \"status\"\
+          : \"skipped\", \"reason\": \"timeout\"})\n\n    cm_name = cm_name.strip()\n\
+          \    print(f\"REDEPLOY {redeploy_index}: applying ConfigMap {cm_name}\"\
+          )\n\n    try:\n        from kubernetes import client, config as k8s_config\n\
+          \        from kubernetes.dynamic import DynamicClient\n        import yaml\n\
+          \n        k8s_config.load_incluster_config()\n        v1 = client.CoreV1Api()\n\
+          \        cm = v1.read_namespaced_config_map(cm_name, namespace)\n\n    \
+          \    yaml_content = None\n        for key, value in (cm.data or {}).items():\n\
+          \            if key.endswith((\".yaml\", \".yml\")):\n                yaml_content\
+          \ = value\n                break\n        if not yaml_content and cm.data:\n\
+          \            yaml_content = list(cm.data.values())[0]\n        if not yaml_content:\n\
+          \            return write_status({\n                \"index\": redeploy_index,\
+          \ \"status\": \"failed\",\n                \"reason\": f\"no YAML data in\
+          \ ConfigMap {cm_name}\",\n            })\n\n        resource = yaml.safe_load(yaml_content)\n\
+          \        dyn = DynamicClient(client.ApiClient())\n        api = dyn.resources.get(\n\
+          \            api_version=resource[\"apiVersion\"], kind=resource[\"kind\"\
+          ],\n        )\n        res_name = resource[\"metadata\"][\"name\"]\n   \
+          \     res_ns = resource[\"metadata\"].get(\"namespace\", namespace)\n\n\
+          \        try:\n            existing = api.get(name=res_name, namespace=res_ns)\n\
+          \            resource[\"metadata\"][\"resourceVersion\"] = existing.metadata.resourceVersion\n\
+          \            api.replace(body=resource, namespace=res_ns)\n            print(f\"\
+          \  Updated {resource['kind']}/{res_name}\")\n        except client.exceptions.ApiException\
+          \ as exc:\n            if exc.status == 404:\n                api.create(body=resource,\
+          \ namespace=res_ns)\n                print(f\"  Created {resource['kind']}/{res_name}\"\
+          )\n            else:\n                raise\n    except Exception as exc:\n\
+          \        return write_status({\n            \"index\": redeploy_index, \"\
+          status\": \"failed\",\n            \"reason\": f\"apply error: {exc}\",\n\
+          \        })\n\n    # Wait for model readiness\n    print(\"  Waiting for\
+          \ model readiness...\")\n    ctx = ssl.create_default_context()\n    ctx.check_hostname\
+          \ = False\n    ctx.verify_mode = ssl.CERT_NONE\n    ready = False\n    for\
+          \ attempt in range(180):\n        if time.time() >= deadline_epoch - 60:\n\
+          \            break\n        try:\n            req = urllib.request.Request(f\"\
+          {endpoint}/models\")\n            req.add_header(\"Authorization\", f\"\
+          Bearer {api_key}\")\n            with urllib.request.urlopen(req, timeout=10,\
+          \ context=ctx) as resp:\n                if resp.status == 200:\n      \
+          \              print(f\"  Model ready after {(attempt + 1) * 10}s\")\n \
+          \                   ready = True\n                    break\n        except\
+          \ Exception:\n            pass\n        time.sleep(10)\n\n    if not ready:\n\
+          \        return write_status({\n            \"index\": redeploy_index, \"\
+          status\": \"failed\",\n            \"reason\": \"model not ready after redeployment\"\
+          ,\n        })\n\n    return write_status({\"index\": redeploy_index, \"\
+          status\": \"completed\"})\n\n"
+        image: registry.redhat.io/ubi9/python-311:latest
+    exec-redeploy-model-2:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - redeploy_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kubernetes>=28.0.0'\
+          \ 'pyyaml>=6.0'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.17.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef redeploy_model(\n    redeploy_configmaps_json: str,\n    redeploy_index:\
+          \ int,\n    run_id: str,\n    namespace: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Apply a ConfigMap's YAML to redeploy the model, then\
+          \ wait for readiness.\"\"\"\n    import json\n    import os\n    import\
+          \ ssl\n    import time\n    import urllib.request\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configmaps\
+          \ = json.loads(redeploy_configmaps_json)\n\n    def write_status(status_dict):\n\
+          \        status_dir = f\"/mnt/results/{run_id}/status\"\n        os.makedirs(status_dir,\
+          \ exist_ok=True)\n        with open(f\"{status_dir}/redeploy_{redeploy_index}.json\"\
+          , \"w\") as f:\n            json.dump(status_dict, f, indent=2)\n      \
+          \  return json.dumps(status_dict)\n\n    if redeploy_index >= len(configmaps):\n\
+          \        return write_status({\"index\": redeploy_index, \"status\": \"\
+          skipped\", \"reason\": \"no config\"})\n\n    cm_name = configmaps[redeploy_index]\n\
+          \    if not cm_name or not cm_name.strip():\n        return write_status({\"\
+          index\": redeploy_index, \"status\": \"skipped\", \"reason\": \"empty\"\
+          })\n\n    remaining = deadline_epoch - time.time()\n    if remaining <=\
+          \ 60:\n        return write_status({\"index\": redeploy_index, \"status\"\
+          : \"skipped\", \"reason\": \"timeout\"})\n\n    cm_name = cm_name.strip()\n\
+          \    print(f\"REDEPLOY {redeploy_index}: applying ConfigMap {cm_name}\"\
+          )\n\n    try:\n        from kubernetes import client, config as k8s_config\n\
+          \        from kubernetes.dynamic import DynamicClient\n        import yaml\n\
+          \n        k8s_config.load_incluster_config()\n        v1 = client.CoreV1Api()\n\
+          \        cm = v1.read_namespaced_config_map(cm_name, namespace)\n\n    \
+          \    yaml_content = None\n        for key, value in (cm.data or {}).items():\n\
+          \            if key.endswith((\".yaml\", \".yml\")):\n                yaml_content\
+          \ = value\n                break\n        if not yaml_content and cm.data:\n\
+          \            yaml_content = list(cm.data.values())[0]\n        if not yaml_content:\n\
+          \            return write_status({\n                \"index\": redeploy_index,\
+          \ \"status\": \"failed\",\n                \"reason\": f\"no YAML data in\
+          \ ConfigMap {cm_name}\",\n            })\n\n        resource = yaml.safe_load(yaml_content)\n\
+          \        dyn = DynamicClient(client.ApiClient())\n        api = dyn.resources.get(\n\
+          \            api_version=resource[\"apiVersion\"], kind=resource[\"kind\"\
+          ],\n        )\n        res_name = resource[\"metadata\"][\"name\"]\n   \
+          \     res_ns = resource[\"metadata\"].get(\"namespace\", namespace)\n\n\
+          \        try:\n            existing = api.get(name=res_name, namespace=res_ns)\n\
+          \            resource[\"metadata\"][\"resourceVersion\"] = existing.metadata.resourceVersion\n\
+          \            api.replace(body=resource, namespace=res_ns)\n            print(f\"\
+          \  Updated {resource['kind']}/{res_name}\")\n        except client.exceptions.ApiException\
+          \ as exc:\n            if exc.status == 404:\n                api.create(body=resource,\
+          \ namespace=res_ns)\n                print(f\"  Created {resource['kind']}/{res_name}\"\
+          )\n            else:\n                raise\n    except Exception as exc:\n\
+          \        return write_status({\n            \"index\": redeploy_index, \"\
+          status\": \"failed\",\n            \"reason\": f\"apply error: {exc}\",\n\
+          \        })\n\n    # Wait for model readiness\n    print(\"  Waiting for\
+          \ model readiness...\")\n    ctx = ssl.create_default_context()\n    ctx.check_hostname\
+          \ = False\n    ctx.verify_mode = ssl.CERT_NONE\n    ready = False\n    for\
+          \ attempt in range(180):\n        if time.time() >= deadline_epoch - 60:\n\
+          \            break\n        try:\n            req = urllib.request.Request(f\"\
+          {endpoint}/models\")\n            req.add_header(\"Authorization\", f\"\
+          Bearer {api_key}\")\n            with urllib.request.urlopen(req, timeout=10,\
+          \ context=ctx) as resp:\n                if resp.status == 200:\n      \
+          \              print(f\"  Model ready after {(attempt + 1) * 10}s\")\n \
+          \                   ready = True\n                    break\n        except\
+          \ Exception:\n            pass\n        time.sleep(10)\n\n    if not ready:\n\
+          \        return write_status({\n            \"index\": redeploy_index, \"\
+          status\": \"failed\",\n            \"reason\": \"model not ready after redeployment\"\
+          ,\n        })\n\n    return write_status({\"index\": redeploy_index, \"\
+          status\": \"completed\"})\n\n"
+        image: registry.redhat.io/ubi9/python-311:latest
+    exec-redeploy-model-3:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - redeploy_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kubernetes>=28.0.0'\
+          \ 'pyyaml>=6.0'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.17.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef redeploy_model(\n    redeploy_configmaps_json: str,\n    redeploy_index:\
+          \ int,\n    run_id: str,\n    namespace: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Apply a ConfigMap's YAML to redeploy the model, then\
+          \ wait for readiness.\"\"\"\n    import json\n    import os\n    import\
+          \ ssl\n    import time\n    import urllib.request\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configmaps\
+          \ = json.loads(redeploy_configmaps_json)\n\n    def write_status(status_dict):\n\
+          \        status_dir = f\"/mnt/results/{run_id}/status\"\n        os.makedirs(status_dir,\
+          \ exist_ok=True)\n        with open(f\"{status_dir}/redeploy_{redeploy_index}.json\"\
+          , \"w\") as f:\n            json.dump(status_dict, f, indent=2)\n      \
+          \  return json.dumps(status_dict)\n\n    if redeploy_index >= len(configmaps):\n\
+          \        return write_status({\"index\": redeploy_index, \"status\": \"\
+          skipped\", \"reason\": \"no config\"})\n\n    cm_name = configmaps[redeploy_index]\n\
+          \    if not cm_name or not cm_name.strip():\n        return write_status({\"\
+          index\": redeploy_index, \"status\": \"skipped\", \"reason\": \"empty\"\
+          })\n\n    remaining = deadline_epoch - time.time()\n    if remaining <=\
+          \ 60:\n        return write_status({\"index\": redeploy_index, \"status\"\
+          : \"skipped\", \"reason\": \"timeout\"})\n\n    cm_name = cm_name.strip()\n\
+          \    print(f\"REDEPLOY {redeploy_index}: applying ConfigMap {cm_name}\"\
+          )\n\n    try:\n        from kubernetes import client, config as k8s_config\n\
+          \        from kubernetes.dynamic import DynamicClient\n        import yaml\n\
+          \n        k8s_config.load_incluster_config()\n        v1 = client.CoreV1Api()\n\
+          \        cm = v1.read_namespaced_config_map(cm_name, namespace)\n\n    \
+          \    yaml_content = None\n        for key, value in (cm.data or {}).items():\n\
+          \            if key.endswith((\".yaml\", \".yml\")):\n                yaml_content\
+          \ = value\n                break\n        if not yaml_content and cm.data:\n\
+          \            yaml_content = list(cm.data.values())[0]\n        if not yaml_content:\n\
+          \            return write_status({\n                \"index\": redeploy_index,\
+          \ \"status\": \"failed\",\n                \"reason\": f\"no YAML data in\
+          \ ConfigMap {cm_name}\",\n            })\n\n        resource = yaml.safe_load(yaml_content)\n\
+          \        dyn = DynamicClient(client.ApiClient())\n        api = dyn.resources.get(\n\
+          \            api_version=resource[\"apiVersion\"], kind=resource[\"kind\"\
+          ],\n        )\n        res_name = resource[\"metadata\"][\"name\"]\n   \
+          \     res_ns = resource[\"metadata\"].get(\"namespace\", namespace)\n\n\
+          \        try:\n            existing = api.get(name=res_name, namespace=res_ns)\n\
+          \            resource[\"metadata\"][\"resourceVersion\"] = existing.metadata.resourceVersion\n\
+          \            api.replace(body=resource, namespace=res_ns)\n            print(f\"\
+          \  Updated {resource['kind']}/{res_name}\")\n        except client.exceptions.ApiException\
+          \ as exc:\n            if exc.status == 404:\n                api.create(body=resource,\
+          \ namespace=res_ns)\n                print(f\"  Created {resource['kind']}/{res_name}\"\
+          )\n            else:\n                raise\n    except Exception as exc:\n\
+          \        return write_status({\n            \"index\": redeploy_index, \"\
+          status\": \"failed\",\n            \"reason\": f\"apply error: {exc}\",\n\
+          \        })\n\n    # Wait for model readiness\n    print(\"  Waiting for\
+          \ model readiness...\")\n    ctx = ssl.create_default_context()\n    ctx.check_hostname\
+          \ = False\n    ctx.verify_mode = ssl.CERT_NONE\n    ready = False\n    for\
+          \ attempt in range(180):\n        if time.time() >= deadline_epoch - 60:\n\
+          \            break\n        try:\n            req = urllib.request.Request(f\"\
+          {endpoint}/models\")\n            req.add_header(\"Authorization\", f\"\
+          Bearer {api_key}\")\n            with urllib.request.urlopen(req, timeout=10,\
+          \ context=ctx) as resp:\n                if resp.status == 200:\n      \
+          \              print(f\"  Model ready after {(attempt + 1) * 10}s\")\n \
+          \                   ready = True\n                    break\n        except\
+          \ Exception:\n            pass\n        time.sleep(10)\n\n    if not ready:\n\
+          \        return write_status({\n            \"index\": redeploy_index, \"\
+          status\": \"failed\",\n            \"reason\": \"model not ready after redeployment\"\
+          ,\n        })\n\n    return write_status({\"index\": redeploy_index, \"\
+          status\": \"completed\"})\n\n"
+        image: registry.redhat.io/ubi9/python-311:latest
+    exec-redeploy-model-4:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - redeploy_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kubernetes>=28.0.0'\
+          \ 'pyyaml>=6.0'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.17.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef redeploy_model(\n    redeploy_configmaps_json: str,\n    redeploy_index:\
+          \ int,\n    run_id: str,\n    namespace: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Apply a ConfigMap's YAML to redeploy the model, then\
+          \ wait for readiness.\"\"\"\n    import json\n    import os\n    import\
+          \ ssl\n    import time\n    import urllib.request\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configmaps\
+          \ = json.loads(redeploy_configmaps_json)\n\n    def write_status(status_dict):\n\
+          \        status_dir = f\"/mnt/results/{run_id}/status\"\n        os.makedirs(status_dir,\
+          \ exist_ok=True)\n        with open(f\"{status_dir}/redeploy_{redeploy_index}.json\"\
+          , \"w\") as f:\n            json.dump(status_dict, f, indent=2)\n      \
+          \  return json.dumps(status_dict)\n\n    if redeploy_index >= len(configmaps):\n\
+          \        return write_status({\"index\": redeploy_index, \"status\": \"\
+          skipped\", \"reason\": \"no config\"})\n\n    cm_name = configmaps[redeploy_index]\n\
+          \    if not cm_name or not cm_name.strip():\n        return write_status({\"\
+          index\": redeploy_index, \"status\": \"skipped\", \"reason\": \"empty\"\
+          })\n\n    remaining = deadline_epoch - time.time()\n    if remaining <=\
+          \ 60:\n        return write_status({\"index\": redeploy_index, \"status\"\
+          : \"skipped\", \"reason\": \"timeout\"})\n\n    cm_name = cm_name.strip()\n\
+          \    print(f\"REDEPLOY {redeploy_index}: applying ConfigMap {cm_name}\"\
+          )\n\n    try:\n        from kubernetes import client, config as k8s_config\n\
+          \        from kubernetes.dynamic import DynamicClient\n        import yaml\n\
+          \n        k8s_config.load_incluster_config()\n        v1 = client.CoreV1Api()\n\
+          \        cm = v1.read_namespaced_config_map(cm_name, namespace)\n\n    \
+          \    yaml_content = None\n        for key, value in (cm.data or {}).items():\n\
+          \            if key.endswith((\".yaml\", \".yml\")):\n                yaml_content\
+          \ = value\n                break\n        if not yaml_content and cm.data:\n\
+          \            yaml_content = list(cm.data.values())[0]\n        if not yaml_content:\n\
+          \            return write_status({\n                \"index\": redeploy_index,\
+          \ \"status\": \"failed\",\n                \"reason\": f\"no YAML data in\
+          \ ConfigMap {cm_name}\",\n            })\n\n        resource = yaml.safe_load(yaml_content)\n\
+          \        dyn = DynamicClient(client.ApiClient())\n        api = dyn.resources.get(\n\
+          \            api_version=resource[\"apiVersion\"], kind=resource[\"kind\"\
+          ],\n        )\n        res_name = resource[\"metadata\"][\"name\"]\n   \
+          \     res_ns = resource[\"metadata\"].get(\"namespace\", namespace)\n\n\
+          \        try:\n            existing = api.get(name=res_name, namespace=res_ns)\n\
+          \            resource[\"metadata\"][\"resourceVersion\"] = existing.metadata.resourceVersion\n\
+          \            api.replace(body=resource, namespace=res_ns)\n            print(f\"\
+          \  Updated {resource['kind']}/{res_name}\")\n        except client.exceptions.ApiException\
+          \ as exc:\n            if exc.status == 404:\n                api.create(body=resource,\
+          \ namespace=res_ns)\n                print(f\"  Created {resource['kind']}/{res_name}\"\
+          )\n            else:\n                raise\n    except Exception as exc:\n\
+          \        return write_status({\n            \"index\": redeploy_index, \"\
+          status\": \"failed\",\n            \"reason\": f\"apply error: {exc}\",\n\
+          \        })\n\n    # Wait for model readiness\n    print(\"  Waiting for\
+          \ model readiness...\")\n    ctx = ssl.create_default_context()\n    ctx.check_hostname\
+          \ = False\n    ctx.verify_mode = ssl.CERT_NONE\n    ready = False\n    for\
+          \ attempt in range(180):\n        if time.time() >= deadline_epoch - 60:\n\
+          \            break\n        try:\n            req = urllib.request.Request(f\"\
+          {endpoint}/models\")\n            req.add_header(\"Authorization\", f\"\
+          Bearer {api_key}\")\n            with urllib.request.urlopen(req, timeout=10,\
+          \ context=ctx) as resp:\n                if resp.status == 200:\n      \
+          \              print(f\"  Model ready after {(attempt + 1) * 10}s\")\n \
+          \                   ready = True\n                    break\n        except\
+          \ Exception:\n            pass\n        time.sleep(10)\n\n    if not ready:\n\
+          \        return write_status({\n            \"index\": redeploy_index, \"\
+          status\": \"failed\",\n            \"reason\": \"model not ready after redeployment\"\
+          ,\n        })\n\n    return write_status({\"index\": redeploy_index, \"\
+          status\": \"completed\"})\n\n"
+        image: registry.redhat.io/ubi9/python-311:latest
+    exec-run-single-test:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - run_single_test
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.17.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef run_single_test(\n    test_configs_json: str,\n    test_index:\
+          \ int,\n    run_id: str,\n    model_name: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Run one GuideLLM benchmark. Skips if index is out of\
+          \ range or past deadline.\"\"\"\n    import json\n    import os\n    import\
+          \ subprocess\n    import time\n    import traceback\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configs\
+          \ = json.loads(test_configs_json)\n\n    def write_status(status_dict):\n\
+          \        path = f\"/mnt/results/{run_id}/status/test_{test_index}.json\"\
+          \n        with open(path, \"w\") as f:\n            json.dump(status_dict,\
+          \ f, indent=2)\n        return json.dumps(status_dict)\n\n    if test_index\
+          \ >= len(configs):\n        return write_status({\"index\": test_index,\
+          \ \"status\": \"skipped\", \"reason\": \"no config\"})\n\n    cfg = configs[test_index]\n\
+          \    test_name = cfg.get(\"name\", f\"test-{test_index:02d}\")\n\n    remaining\
+          \ = deadline_epoch - time.time()\n    if remaining <= 60:\n        return\
+          \ write_status({\n            \"index\": test_index, \"name\": test_name,\
+          \ \"config\": cfg,\n            \"status\": \"skipped\", \"reason\": \"\
+          timeout\",\n        })\n\n    test_start = time.time()\n    test_dir = f\"\
+          /mnt/results/{run_id}/{test_name}\"\n    os.makedirs(test_dir, exist_ok=True)\n\
+          \n    prompt_tokens = cfg.get(\"prompt_tokens\", 256)\n    output_tokens\
+          \ = cfg.get(\"output_tokens\", 128)\n    profile = cfg.get(\"profile\",\
+          \ \"sweep\")\n    sweep_size = cfg.get(\"sweep_size\", 6)\n    duration\
+          \ = min(cfg.get(\"duration\", 120), max(int(remaining) - 30, 10))\n\n  \
+          \  request_format = cfg.get(\"request_format\", \"/v1/completions\")\n \
+          \   backend_arg = (\n        f\"kind=openai_http,target={endpoint},\"\n\
+          \        f\"api_key={api_key},model={model_name},\"\n        f\"request_format={request_format}\"\
+          \n    )\n    data_arg = cfg.get(\"data\") or (\n        f\"kind=synthetic_text,\"\
+          \n        f\"prompt_tokens={prompt_tokens},\"\n        f\"output_tokens={output_tokens}\"\
+          \n    )\n\n    if profile == \"constant_rate\":\n        profile_arg = f\"\
+          kind=constant,rate={cfg.get('rate', 1.0)},max_concurrency={cfg.get('max_concurrency',\
+          \ 32)}\"\n    elif profile == \"throughput\":\n        profile_arg = f\"\
+          kind=throughput,max_concurrency={cfg.get('max_concurrency', 32)}\"\n   \
+          \ elif profile == \"concurrent\":\n        profile_arg = f\"kind=concurrent,streams={cfg.get('streams',\
+          \ 8)}\"\n    else:\n        profile_arg = f\"kind=sweep,sweep_size={sweep_size}\"\
+          \n\n    cmd = [\n        \"guidellm\", \"run\",\n        \"--backend\",\
+          \ backend_arg,\n        \"--data\", data_arg,\n        \"--profile\", profile_arg,\n\
+          \        \"--constraint\", f\"kind=max_duration,seconds={duration}\",\n\
+          \        \"--output\", f\"kind=json,path={test_dir}/benchmarks.json\",\n\
+          \        \"--output\", f\"kind=csv,path={test_dir}/benchmarks.csv\",\n \
+          \       \"--output\", f\"kind=html,path={test_dir}/benchmarks.html\",\n\
+          \    ]\n\n    print(f\"TEST {test_index}: {test_name}\")\n    print(f\"\
+          \  tokens: {prompt_tokens} in / {output_tokens} out\")\n    print(f\"  profile:\
+          \ {profile_arg}\")\n    print(f\"  duration: {duration}s  (budget remaining:\
+          \ {int(remaining)}s)\")\n\n    exit_code = -1\n    try:\n        result\
+          \ = subprocess.run(\n            cmd, capture_output=True, text=True,\n\
+          \            timeout=duration + 120,\n        )\n        exit_code = result.returncode\n\
+          \        if result.stdout:\n            print(result.stdout[-3000:])\n \
+          \       if exit_code != 0 and result.stderr:\n            print(f\"STDERR:\\\
+          n{result.stderr[-1000:]}\")\n    except subprocess.TimeoutExpired:\n   \
+          \     print(\"  subprocess timed out\")\n    except Exception:\n       \
+          \ traceback.print_exc()\n\n    status = \"completed\" if exit_code == 0\
+          \ else \"failed\"\n\n    # Extract key metrics from GuideLLM JSON output\n\
+          \    metrics = {}\n    json_path = f\"{test_dir}/benchmarks.json\"\n   \
+          \ if os.path.exists(json_path):\n        try:\n            with open(json_path)\
+          \ as f:\n                data = json.load(f)\n            benchmarks = (\n\
+          \                data if isinstance(data, list)\n                else data.get(\"\
+          benchmarks\", [data])\n            )\n            for idx, bench in enumerate(benchmarks):\n\
+          \                stats = bench.get(\"stats\", bench)\n                metrics[f\"\
+          strategy_{idx}\"] = {\n                    k: stats[k]\n               \
+          \     for k in [\n                        \"request_rate\", \"request_concurrency\"\
+          ,\n                        \"request_latency_seconds_mean\", \"request_latency_seconds_p99\"\
+          ,\n                        \"time_to_first_token_seconds_mean\", \"time_to_first_token_seconds_p99\"\
+          ,\n                        \"inter_token_latency_seconds_mean\", \"inter_token_latency_seconds_p99\"\
+          ,\n                        \"output_tokens_per_second_mean\", \"total_tokens_per_second\"\
+          ,\n                        \"completed_request_rate\", \"error_rate\",\n\
+          \                    ]\n                    if k in stats and stats[k] is\
+          \ not None\n                }\n        except Exception:\n            pass\n\
+          \n    elapsed = round(time.time() - test_start, 1)\n    print(f\"  -> {test_name}:\
+          \ {status} in {elapsed}s\")\n\n    return write_status({\n        \"index\"\
+          : test_index, \"name\": test_name, \"config\": cfg,\n        \"status\"\
+          : status, \"exit_code\": exit_code,\n        \"duration_seconds\": elapsed,\
+          \ \"metrics\": metrics,\n    })\n\n"
+        image: ghcr.io/vllm-project/guidellm:stable
+        resources:
+          cpuLimit: 4.0
+          cpuRequest: 2.0
+          memoryLimit: 8.589934592
+          memoryRequest: 4.294967296
+          resourceCpuLimit: '4'
+          resourceCpuRequest: '2'
+          resourceMemoryLimit: 8Gi
+          resourceMemoryRequest: 4Gi
+    exec-run-single-test-2:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - run_single_test
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.17.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef run_single_test(\n    test_configs_json: str,\n    test_index:\
+          \ int,\n    run_id: str,\n    model_name: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Run one GuideLLM benchmark. Skips if index is out of\
+          \ range or past deadline.\"\"\"\n    import json\n    import os\n    import\
+          \ subprocess\n    import time\n    import traceback\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configs\
+          \ = json.loads(test_configs_json)\n\n    def write_status(status_dict):\n\
+          \        path = f\"/mnt/results/{run_id}/status/test_{test_index}.json\"\
+          \n        with open(path, \"w\") as f:\n            json.dump(status_dict,\
+          \ f, indent=2)\n        return json.dumps(status_dict)\n\n    if test_index\
+          \ >= len(configs):\n        return write_status({\"index\": test_index,\
+          \ \"status\": \"skipped\", \"reason\": \"no config\"})\n\n    cfg = configs[test_index]\n\
+          \    test_name = cfg.get(\"name\", f\"test-{test_index:02d}\")\n\n    remaining\
+          \ = deadline_epoch - time.time()\n    if remaining <= 60:\n        return\
+          \ write_status({\n            \"index\": test_index, \"name\": test_name,\
+          \ \"config\": cfg,\n            \"status\": \"skipped\", \"reason\": \"\
+          timeout\",\n        })\n\n    test_start = time.time()\n    test_dir = f\"\
+          /mnt/results/{run_id}/{test_name}\"\n    os.makedirs(test_dir, exist_ok=True)\n\
+          \n    prompt_tokens = cfg.get(\"prompt_tokens\", 256)\n    output_tokens\
+          \ = cfg.get(\"output_tokens\", 128)\n    profile = cfg.get(\"profile\",\
+          \ \"sweep\")\n    sweep_size = cfg.get(\"sweep_size\", 6)\n    duration\
+          \ = min(cfg.get(\"duration\", 120), max(int(remaining) - 30, 10))\n\n  \
+          \  request_format = cfg.get(\"request_format\", \"/v1/completions\")\n \
+          \   backend_arg = (\n        f\"kind=openai_http,target={endpoint},\"\n\
+          \        f\"api_key={api_key},model={model_name},\"\n        f\"request_format={request_format}\"\
+          \n    )\n    data_arg = cfg.get(\"data\") or (\n        f\"kind=synthetic_text,\"\
+          \n        f\"prompt_tokens={prompt_tokens},\"\n        f\"output_tokens={output_tokens}\"\
+          \n    )\n\n    if profile == \"constant_rate\":\n        profile_arg = f\"\
+          kind=constant,rate={cfg.get('rate', 1.0)},max_concurrency={cfg.get('max_concurrency',\
+          \ 32)}\"\n    elif profile == \"throughput\":\n        profile_arg = f\"\
+          kind=throughput,max_concurrency={cfg.get('max_concurrency', 32)}\"\n   \
+          \ elif profile == \"concurrent\":\n        profile_arg = f\"kind=concurrent,streams={cfg.get('streams',\
+          \ 8)}\"\n    else:\n        profile_arg = f\"kind=sweep,sweep_size={sweep_size}\"\
+          \n\n    cmd = [\n        \"guidellm\", \"run\",\n        \"--backend\",\
+          \ backend_arg,\n        \"--data\", data_arg,\n        \"--profile\", profile_arg,\n\
+          \        \"--constraint\", f\"kind=max_duration,seconds={duration}\",\n\
+          \        \"--output\", f\"kind=json,path={test_dir}/benchmarks.json\",\n\
+          \        \"--output\", f\"kind=csv,path={test_dir}/benchmarks.csv\",\n \
+          \       \"--output\", f\"kind=html,path={test_dir}/benchmarks.html\",\n\
+          \    ]\n\n    print(f\"TEST {test_index}: {test_name}\")\n    print(f\"\
+          \  tokens: {prompt_tokens} in / {output_tokens} out\")\n    print(f\"  profile:\
+          \ {profile_arg}\")\n    print(f\"  duration: {duration}s  (budget remaining:\
+          \ {int(remaining)}s)\")\n\n    exit_code = -1\n    try:\n        result\
+          \ = subprocess.run(\n            cmd, capture_output=True, text=True,\n\
+          \            timeout=duration + 120,\n        )\n        exit_code = result.returncode\n\
+          \        if result.stdout:\n            print(result.stdout[-3000:])\n \
+          \       if exit_code != 0 and result.stderr:\n            print(f\"STDERR:\\\
+          n{result.stderr[-1000:]}\")\n    except subprocess.TimeoutExpired:\n   \
+          \     print(\"  subprocess timed out\")\n    except Exception:\n       \
+          \ traceback.print_exc()\n\n    status = \"completed\" if exit_code == 0\
+          \ else \"failed\"\n\n    # Extract key metrics from GuideLLM JSON output\n\
+          \    metrics = {}\n    json_path = f\"{test_dir}/benchmarks.json\"\n   \
+          \ if os.path.exists(json_path):\n        try:\n            with open(json_path)\
+          \ as f:\n                data = json.load(f)\n            benchmarks = (\n\
+          \                data if isinstance(data, list)\n                else data.get(\"\
+          benchmarks\", [data])\n            )\n            for idx, bench in enumerate(benchmarks):\n\
+          \                stats = bench.get(\"stats\", bench)\n                metrics[f\"\
+          strategy_{idx}\"] = {\n                    k: stats[k]\n               \
+          \     for k in [\n                        \"request_rate\", \"request_concurrency\"\
+          ,\n                        \"request_latency_seconds_mean\", \"request_latency_seconds_p99\"\
+          ,\n                        \"time_to_first_token_seconds_mean\", \"time_to_first_token_seconds_p99\"\
+          ,\n                        \"inter_token_latency_seconds_mean\", \"inter_token_latency_seconds_p99\"\
+          ,\n                        \"output_tokens_per_second_mean\", \"total_tokens_per_second\"\
+          ,\n                        \"completed_request_rate\", \"error_rate\",\n\
+          \                    ]\n                    if k in stats and stats[k] is\
+          \ not None\n                }\n        except Exception:\n            pass\n\
+          \n    elapsed = round(time.time() - test_start, 1)\n    print(f\"  -> {test_name}:\
+          \ {status} in {elapsed}s\")\n\n    return write_status({\n        \"index\"\
+          : test_index, \"name\": test_name, \"config\": cfg,\n        \"status\"\
+          : status, \"exit_code\": exit_code,\n        \"duration_seconds\": elapsed,\
+          \ \"metrics\": metrics,\n    })\n\n"
+        image: ghcr.io/vllm-project/guidellm:stable
+        resources:
+          cpuLimit: 4.0
+          cpuRequest: 2.0
+          memoryLimit: 8.589934592
+          memoryRequest: 4.294967296
+          resourceCpuLimit: '4'
+          resourceCpuRequest: '2'
+          resourceMemoryLimit: 8Gi
+          resourceMemoryRequest: 4Gi
+    exec-run-single-test-3:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - run_single_test
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.17.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef run_single_test(\n    test_configs_json: str,\n    test_index:\
+          \ int,\n    run_id: str,\n    model_name: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Run one GuideLLM benchmark. Skips if index is out of\
+          \ range or past deadline.\"\"\"\n    import json\n    import os\n    import\
+          \ subprocess\n    import time\n    import traceback\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configs\
+          \ = json.loads(test_configs_json)\n\n    def write_status(status_dict):\n\
+          \        path = f\"/mnt/results/{run_id}/status/test_{test_index}.json\"\
+          \n        with open(path, \"w\") as f:\n            json.dump(status_dict,\
+          \ f, indent=2)\n        return json.dumps(status_dict)\n\n    if test_index\
+          \ >= len(configs):\n        return write_status({\"index\": test_index,\
+          \ \"status\": \"skipped\", \"reason\": \"no config\"})\n\n    cfg = configs[test_index]\n\
+          \    test_name = cfg.get(\"name\", f\"test-{test_index:02d}\")\n\n    remaining\
+          \ = deadline_epoch - time.time()\n    if remaining <= 60:\n        return\
+          \ write_status({\n            \"index\": test_index, \"name\": test_name,\
+          \ \"config\": cfg,\n            \"status\": \"skipped\", \"reason\": \"\
+          timeout\",\n        })\n\n    test_start = time.time()\n    test_dir = f\"\
+          /mnt/results/{run_id}/{test_name}\"\n    os.makedirs(test_dir, exist_ok=True)\n\
+          \n    prompt_tokens = cfg.get(\"prompt_tokens\", 256)\n    output_tokens\
+          \ = cfg.get(\"output_tokens\", 128)\n    profile = cfg.get(\"profile\",\
+          \ \"sweep\")\n    sweep_size = cfg.get(\"sweep_size\", 6)\n    duration\
+          \ = min(cfg.get(\"duration\", 120), max(int(remaining) - 30, 10))\n\n  \
+          \  request_format = cfg.get(\"request_format\", \"/v1/completions\")\n \
+          \   backend_arg = (\n        f\"kind=openai_http,target={endpoint},\"\n\
+          \        f\"api_key={api_key},model={model_name},\"\n        f\"request_format={request_format}\"\
+          \n    )\n    data_arg = cfg.get(\"data\") or (\n        f\"kind=synthetic_text,\"\
+          \n        f\"prompt_tokens={prompt_tokens},\"\n        f\"output_tokens={output_tokens}\"\
+          \n    )\n\n    if profile == \"constant_rate\":\n        profile_arg = f\"\
+          kind=constant,rate={cfg.get('rate', 1.0)},max_concurrency={cfg.get('max_concurrency',\
+          \ 32)}\"\n    elif profile == \"throughput\":\n        profile_arg = f\"\
+          kind=throughput,max_concurrency={cfg.get('max_concurrency', 32)}\"\n   \
+          \ elif profile == \"concurrent\":\n        profile_arg = f\"kind=concurrent,streams={cfg.get('streams',\
+          \ 8)}\"\n    else:\n        profile_arg = f\"kind=sweep,sweep_size={sweep_size}\"\
+          \n\n    cmd = [\n        \"guidellm\", \"run\",\n        \"--backend\",\
+          \ backend_arg,\n        \"--data\", data_arg,\n        \"--profile\", profile_arg,\n\
+          \        \"--constraint\", f\"kind=max_duration,seconds={duration}\",\n\
+          \        \"--output\", f\"kind=json,path={test_dir}/benchmarks.json\",\n\
+          \        \"--output\", f\"kind=csv,path={test_dir}/benchmarks.csv\",\n \
+          \       \"--output\", f\"kind=html,path={test_dir}/benchmarks.html\",\n\
+          \    ]\n\n    print(f\"TEST {test_index}: {test_name}\")\n    print(f\"\
+          \  tokens: {prompt_tokens} in / {output_tokens} out\")\n    print(f\"  profile:\
+          \ {profile_arg}\")\n    print(f\"  duration: {duration}s  (budget remaining:\
+          \ {int(remaining)}s)\")\n\n    exit_code = -1\n    try:\n        result\
+          \ = subprocess.run(\n            cmd, capture_output=True, text=True,\n\
+          \            timeout=duration + 120,\n        )\n        exit_code = result.returncode\n\
+          \        if result.stdout:\n            print(result.stdout[-3000:])\n \
+          \       if exit_code != 0 and result.stderr:\n            print(f\"STDERR:\\\
+          n{result.stderr[-1000:]}\")\n    except subprocess.TimeoutExpired:\n   \
+          \     print(\"  subprocess timed out\")\n    except Exception:\n       \
+          \ traceback.print_exc()\n\n    status = \"completed\" if exit_code == 0\
+          \ else \"failed\"\n\n    # Extract key metrics from GuideLLM JSON output\n\
+          \    metrics = {}\n    json_path = f\"{test_dir}/benchmarks.json\"\n   \
+          \ if os.path.exists(json_path):\n        try:\n            with open(json_path)\
+          \ as f:\n                data = json.load(f)\n            benchmarks = (\n\
+          \                data if isinstance(data, list)\n                else data.get(\"\
+          benchmarks\", [data])\n            )\n            for idx, bench in enumerate(benchmarks):\n\
+          \                stats = bench.get(\"stats\", bench)\n                metrics[f\"\
+          strategy_{idx}\"] = {\n                    k: stats[k]\n               \
+          \     for k in [\n                        \"request_rate\", \"request_concurrency\"\
+          ,\n                        \"request_latency_seconds_mean\", \"request_latency_seconds_p99\"\
+          ,\n                        \"time_to_first_token_seconds_mean\", \"time_to_first_token_seconds_p99\"\
+          ,\n                        \"inter_token_latency_seconds_mean\", \"inter_token_latency_seconds_p99\"\
+          ,\n                        \"output_tokens_per_second_mean\", \"total_tokens_per_second\"\
+          ,\n                        \"completed_request_rate\", \"error_rate\",\n\
+          \                    ]\n                    if k in stats and stats[k] is\
+          \ not None\n                }\n        except Exception:\n            pass\n\
+          \n    elapsed = round(time.time() - test_start, 1)\n    print(f\"  -> {test_name}:\
+          \ {status} in {elapsed}s\")\n\n    return write_status({\n        \"index\"\
+          : test_index, \"name\": test_name, \"config\": cfg,\n        \"status\"\
+          : status, \"exit_code\": exit_code,\n        \"duration_seconds\": elapsed,\
+          \ \"metrics\": metrics,\n    })\n\n"
+        image: ghcr.io/vllm-project/guidellm:stable
+        resources:
+          cpuLimit: 4.0
+          cpuRequest: 2.0
+          memoryLimit: 8.589934592
+          memoryRequest: 4.294967296
+          resourceCpuLimit: '4'
+          resourceCpuRequest: '2'
+          resourceMemoryLimit: 8Gi
+          resourceMemoryRequest: 4Gi
+    exec-run-single-test-4:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - run_single_test
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.17.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef run_single_test(\n    test_configs_json: str,\n    test_index:\
+          \ int,\n    run_id: str,\n    model_name: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Run one GuideLLM benchmark. Skips if index is out of\
+          \ range or past deadline.\"\"\"\n    import json\n    import os\n    import\
+          \ subprocess\n    import time\n    import traceback\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configs\
+          \ = json.loads(test_configs_json)\n\n    def write_status(status_dict):\n\
+          \        path = f\"/mnt/results/{run_id}/status/test_{test_index}.json\"\
+          \n        with open(path, \"w\") as f:\n            json.dump(status_dict,\
+          \ f, indent=2)\n        return json.dumps(status_dict)\n\n    if test_index\
+          \ >= len(configs):\n        return write_status({\"index\": test_index,\
+          \ \"status\": \"skipped\", \"reason\": \"no config\"})\n\n    cfg = configs[test_index]\n\
+          \    test_name = cfg.get(\"name\", f\"test-{test_index:02d}\")\n\n    remaining\
+          \ = deadline_epoch - time.time()\n    if remaining <= 60:\n        return\
+          \ write_status({\n            \"index\": test_index, \"name\": test_name,\
+          \ \"config\": cfg,\n            \"status\": \"skipped\", \"reason\": \"\
+          timeout\",\n        })\n\n    test_start = time.time()\n    test_dir = f\"\
+          /mnt/results/{run_id}/{test_name}\"\n    os.makedirs(test_dir, exist_ok=True)\n\
+          \n    prompt_tokens = cfg.get(\"prompt_tokens\", 256)\n    output_tokens\
+          \ = cfg.get(\"output_tokens\", 128)\n    profile = cfg.get(\"profile\",\
+          \ \"sweep\")\n    sweep_size = cfg.get(\"sweep_size\", 6)\n    duration\
+          \ = min(cfg.get(\"duration\", 120), max(int(remaining) - 30, 10))\n\n  \
+          \  request_format = cfg.get(\"request_format\", \"/v1/completions\")\n \
+          \   backend_arg = (\n        f\"kind=openai_http,target={endpoint},\"\n\
+          \        f\"api_key={api_key},model={model_name},\"\n        f\"request_format={request_format}\"\
+          \n    )\n    data_arg = cfg.get(\"data\") or (\n        f\"kind=synthetic_text,\"\
+          \n        f\"prompt_tokens={prompt_tokens},\"\n        f\"output_tokens={output_tokens}\"\
+          \n    )\n\n    if profile == \"constant_rate\":\n        profile_arg = f\"\
+          kind=constant,rate={cfg.get('rate', 1.0)},max_concurrency={cfg.get('max_concurrency',\
+          \ 32)}\"\n    elif profile == \"throughput\":\n        profile_arg = f\"\
+          kind=throughput,max_concurrency={cfg.get('max_concurrency', 32)}\"\n   \
+          \ elif profile == \"concurrent\":\n        profile_arg = f\"kind=concurrent,streams={cfg.get('streams',\
+          \ 8)}\"\n    else:\n        profile_arg = f\"kind=sweep,sweep_size={sweep_size}\"\
+          \n\n    cmd = [\n        \"guidellm\", \"run\",\n        \"--backend\",\
+          \ backend_arg,\n        \"--data\", data_arg,\n        \"--profile\", profile_arg,\n\
+          \        \"--constraint\", f\"kind=max_duration,seconds={duration}\",\n\
+          \        \"--output\", f\"kind=json,path={test_dir}/benchmarks.json\",\n\
+          \        \"--output\", f\"kind=csv,path={test_dir}/benchmarks.csv\",\n \
+          \       \"--output\", f\"kind=html,path={test_dir}/benchmarks.html\",\n\
+          \    ]\n\n    print(f\"TEST {test_index}: {test_name}\")\n    print(f\"\
+          \  tokens: {prompt_tokens} in / {output_tokens} out\")\n    print(f\"  profile:\
+          \ {profile_arg}\")\n    print(f\"  duration: {duration}s  (budget remaining:\
+          \ {int(remaining)}s)\")\n\n    exit_code = -1\n    try:\n        result\
+          \ = subprocess.run(\n            cmd, capture_output=True, text=True,\n\
+          \            timeout=duration + 120,\n        )\n        exit_code = result.returncode\n\
+          \        if result.stdout:\n            print(result.stdout[-3000:])\n \
+          \       if exit_code != 0 and result.stderr:\n            print(f\"STDERR:\\\
+          n{result.stderr[-1000:]}\")\n    except subprocess.TimeoutExpired:\n   \
+          \     print(\"  subprocess timed out\")\n    except Exception:\n       \
+          \ traceback.print_exc()\n\n    status = \"completed\" if exit_code == 0\
+          \ else \"failed\"\n\n    # Extract key metrics from GuideLLM JSON output\n\
+          \    metrics = {}\n    json_path = f\"{test_dir}/benchmarks.json\"\n   \
+          \ if os.path.exists(json_path):\n        try:\n            with open(json_path)\
+          \ as f:\n                data = json.load(f)\n            benchmarks = (\n\
+          \                data if isinstance(data, list)\n                else data.get(\"\
+          benchmarks\", [data])\n            )\n            for idx, bench in enumerate(benchmarks):\n\
+          \                stats = bench.get(\"stats\", bench)\n                metrics[f\"\
+          strategy_{idx}\"] = {\n                    k: stats[k]\n               \
+          \     for k in [\n                        \"request_rate\", \"request_concurrency\"\
+          ,\n                        \"request_latency_seconds_mean\", \"request_latency_seconds_p99\"\
+          ,\n                        \"time_to_first_token_seconds_mean\", \"time_to_first_token_seconds_p99\"\
+          ,\n                        \"inter_token_latency_seconds_mean\", \"inter_token_latency_seconds_p99\"\
+          ,\n                        \"output_tokens_per_second_mean\", \"total_tokens_per_second\"\
+          ,\n                        \"completed_request_rate\", \"error_rate\",\n\
+          \                    ]\n                    if k in stats and stats[k] is\
+          \ not None\n                }\n        except Exception:\n            pass\n\
+          \n    elapsed = round(time.time() - test_start, 1)\n    print(f\"  -> {test_name}:\
+          \ {status} in {elapsed}s\")\n\n    return write_status({\n        \"index\"\
+          : test_index, \"name\": test_name, \"config\": cfg,\n        \"status\"\
+          : status, \"exit_code\": exit_code,\n        \"duration_seconds\": elapsed,\
+          \ \"metrics\": metrics,\n    })\n\n"
+        image: ghcr.io/vllm-project/guidellm:stable
+        resources:
+          cpuLimit: 4.0
+          cpuRequest: 2.0
+          memoryLimit: 8.589934592
+          memoryRequest: 4.294967296
+          resourceCpuLimit: '4'
+          resourceCpuRequest: '2'
+          resourceMemoryLimit: 8Gi
+          resourceMemoryRequest: 4Gi
+    exec-run-single-test-5:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - run_single_test
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.17.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef run_single_test(\n    test_configs_json: str,\n    test_index:\
+          \ int,\n    run_id: str,\n    model_name: str,\n    deadline_epoch: float,\n\
+          ) -> str:\n    \"\"\"Run one GuideLLM benchmark. Skips if index is out of\
+          \ range or past deadline.\"\"\"\n    import json\n    import os\n    import\
+          \ subprocess\n    import time\n    import traceback\n\n    endpoint = os.environ[\"\
+          RHOAI_ENDPOINT\"]\n    api_key = os.environ[\"RHOAI_TOKEN\"]\n\n    configs\
+          \ = json.loads(test_configs_json)\n\n    def write_status(status_dict):\n\
+          \        path = f\"/mnt/results/{run_id}/status/test_{test_index}.json\"\
+          \n        with open(path, \"w\") as f:\n            json.dump(status_dict,\
+          \ f, indent=2)\n        return json.dumps(status_dict)\n\n    if test_index\
+          \ >= len(configs):\n        return write_status({\"index\": test_index,\
+          \ \"status\": \"skipped\", \"reason\": \"no config\"})\n\n    cfg = configs[test_index]\n\
+          \    test_name = cfg.get(\"name\", f\"test-{test_index:02d}\")\n\n    remaining\
+          \ = deadline_epoch - time.time()\n    if remaining <= 60:\n        return\
+          \ write_status({\n            \"index\": test_index, \"name\": test_name,\
+          \ \"config\": cfg,\n            \"status\": \"skipped\", \"reason\": \"\
+          timeout\",\n        })\n\n    test_start = time.time()\n    test_dir = f\"\
+          /mnt/results/{run_id}/{test_name}\"\n    os.makedirs(test_dir, exist_ok=True)\n\
+          \n    prompt_tokens = cfg.get(\"prompt_tokens\", 256)\n    output_tokens\
+          \ = cfg.get(\"output_tokens\", 128)\n    profile = cfg.get(\"profile\",\
+          \ \"sweep\")\n    sweep_size = cfg.get(\"sweep_size\", 6)\n    duration\
+          \ = min(cfg.get(\"duration\", 120), max(int(remaining) - 30, 10))\n\n  \
+          \  request_format = cfg.get(\"request_format\", \"/v1/completions\")\n \
+          \   backend_arg = (\n        f\"kind=openai_http,target={endpoint},\"\n\
+          \        f\"api_key={api_key},model={model_name},\"\n        f\"request_format={request_format}\"\
+          \n    )\n    data_arg = cfg.get(\"data\") or (\n        f\"kind=synthetic_text,\"\
+          \n        f\"prompt_tokens={prompt_tokens},\"\n        f\"output_tokens={output_tokens}\"\
+          \n    )\n\n    if profile == \"constant_rate\":\n        profile_arg = f\"\
+          kind=constant,rate={cfg.get('rate', 1.0)},max_concurrency={cfg.get('max_concurrency',\
+          \ 32)}\"\n    elif profile == \"throughput\":\n        profile_arg = f\"\
+          kind=throughput,max_concurrency={cfg.get('max_concurrency', 32)}\"\n   \
+          \ elif profile == \"concurrent\":\n        profile_arg = f\"kind=concurrent,streams={cfg.get('streams',\
+          \ 8)}\"\n    else:\n        profile_arg = f\"kind=sweep,sweep_size={sweep_size}\"\
+          \n\n    cmd = [\n        \"guidellm\", \"run\",\n        \"--backend\",\
+          \ backend_arg,\n        \"--data\", data_arg,\n        \"--profile\", profile_arg,\n\
+          \        \"--constraint\", f\"kind=max_duration,seconds={duration}\",\n\
+          \        \"--output\", f\"kind=json,path={test_dir}/benchmarks.json\",\n\
+          \        \"--output\", f\"kind=csv,path={test_dir}/benchmarks.csv\",\n \
+          \       \"--output\", f\"kind=html,path={test_dir}/benchmarks.html\",\n\
+          \    ]\n\n    print(f\"TEST {test_index}: {test_name}\")\n    print(f\"\
+          \  tokens: {prompt_tokens} in / {output_tokens} out\")\n    print(f\"  profile:\
+          \ {profile_arg}\")\n    print(f\"  duration: {duration}s  (budget remaining:\
+          \ {int(remaining)}s)\")\n\n    exit_code = -1\n    try:\n        result\
+          \ = subprocess.run(\n            cmd, capture_output=True, text=True,\n\
+          \            timeout=duration + 120,\n        )\n        exit_code = result.returncode\n\
+          \        if result.stdout:\n            print(result.stdout[-3000:])\n \
+          \       if exit_code != 0 and result.stderr:\n            print(f\"STDERR:\\\
+          n{result.stderr[-1000:]}\")\n    except subprocess.TimeoutExpired:\n   \
+          \     print(\"  subprocess timed out\")\n    except Exception:\n       \
+          \ traceback.print_exc()\n\n    status = \"completed\" if exit_code == 0\
+          \ else \"failed\"\n\n    # Extract key metrics from GuideLLM JSON output\n\
+          \    metrics = {}\n    json_path = f\"{test_dir}/benchmarks.json\"\n   \
+          \ if os.path.exists(json_path):\n        try:\n            with open(json_path)\
+          \ as f:\n                data = json.load(f)\n            benchmarks = (\n\
+          \                data if isinstance(data, list)\n                else data.get(\"\
+          benchmarks\", [data])\n            )\n            for idx, bench in enumerate(benchmarks):\n\
+          \                stats = bench.get(\"stats\", bench)\n                metrics[f\"\
+          strategy_{idx}\"] = {\n                    k: stats[k]\n               \
+          \     for k in [\n                        \"request_rate\", \"request_concurrency\"\
+          ,\n                        \"request_latency_seconds_mean\", \"request_latency_seconds_p99\"\
+          ,\n                        \"time_to_first_token_seconds_mean\", \"time_to_first_token_seconds_p99\"\
+          ,\n                        \"inter_token_latency_seconds_mean\", \"inter_token_latency_seconds_p99\"\
+          ,\n                        \"output_tokens_per_second_mean\", \"total_tokens_per_second\"\
+          ,\n                        \"completed_request_rate\", \"error_rate\",\n\
+          \                    ]\n                    if k in stats and stats[k] is\
+          \ not None\n                }\n        except Exception:\n            pass\n\
+          \n    elapsed = round(time.time() - test_start, 1)\n    print(f\"  -> {test_name}:\
+          \ {status} in {elapsed}s\")\n\n    return write_status({\n        \"index\"\
+          : test_index, \"name\": test_name, \"config\": cfg,\n        \"status\"\
+          : status, \"exit_code\": exit_code,\n        \"duration_seconds\": elapsed,\
+          \ \"metrics\": metrics,\n    })\n\n"
+        image: ghcr.io/vllm-project/guidellm:stable
+        resources:
+          cpuLimit: 4.0
+          cpuRequest: 2.0
+          memoryLimit: 8.589934592
+          memoryRequest: 4.294967296
+          resourceCpuLimit: '4'
+          resourceCpuRequest: '2'
+          resourceMemoryLimit: 8Gi
+          resourceMemoryRequest: 4Gi
+    exec-setup-run:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - setup_run
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.17.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef setup_run(\n    test_configs_json: str,\n    timeout_minutes:\
+          \ int,\n) -> NamedTuple(\"SetupOutput\", [(\"run_id\", str), (\"deadline_epoch\"\
+          , float)]):\n    \"\"\"Create the run directory and compute the deadline.\"\
+          \"\"\n    import json\n    import os\n    import time\n    from collections\
+          \ import namedtuple\n    from datetime import datetime, timezone\n\n   \
+          \ configs = json.loads(test_configs_json)\n    run_id = datetime.now(timezone.utc).strftime(\"\
+          %Y%m%d-%H%M%S\")\n    deadline = time.time() + timeout_minutes * 60\n\n\
+          \    run_dir = f\"/mnt/results/{run_id}\"\n    os.makedirs(f\"{run_dir}/status\"\
+          , exist_ok=True)\n\n    metadata = {\n        \"run_id\": run_id,\n    \
+          \    \"start_time\": datetime.now(timezone.utc).isoformat(),\n        \"\
+          test_configs\": configs,\n        \"timeout_minutes\": timeout_minutes,\n\
+          \        \"deadline_epoch\": deadline,\n        \"total_tests\": len(configs),\n\
+          \    }\n    with open(f\"{run_dir}/metadata.json\", \"w\") as f:\n     \
+          \   json.dump(metadata, f, indent=2)\n\n    print(f\"Run {run_id}: {len(configs)}\
+          \ tests, {timeout_minutes}min budget\")\n\n    Output = namedtuple(\"SetupOutput\"\
+          , [\"run_id\", \"deadline_epoch\"])\n    return Output(run_id=run_id, deadline_epoch=deadline)\n\
+          \n"
+        image: registry.redhat.io/ubi9/python-311:latest
+pipelineInfo:
+  description: Sequential GuideLLM load tests with separate steps for each test and
+    each redeployment. Supports up to 5 test slots, timeout-aware graceful exit, a
+    final Markdown report, and model cleanup.
+  name: guidellm-benchmark-pipeline
+root:
+  dag:
+    tasks:
+      exit-handler-1:
+        componentRef:
+          name: comp-exit-handler-1
+        dependentTasks:
+        - setup-run
+        inputs:
+          parameters:
+            pipelinechannel--model_name:
+              componentInputParameter: model_name
+            pipelinechannel--namespace:
+              componentInputParameter: namespace
+            pipelinechannel--redeploy_configmaps:
+              componentInputParameter: redeploy_configmaps
+            pipelinechannel--setup-run-deadline_epoch:
+              taskOutputParameter:
+                outputParameterKey: deadline_epoch
+                producerTask: setup-run
+            pipelinechannel--setup-run-run_id:
+              taskOutputParameter:
+                outputParameterKey: run_id
+                producerTask: setup-run
+            pipelinechannel--test_configs:
+              componentInputParameter: test_configs
+        taskInfo:
+          name: exit-handler-1
+      finalize-run:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-finalize-run
+        dependentTasks:
+        - exit-handler-1
+        inputs:
+          parameters:
+            cleanup_configmap:
+              componentInputParameter: cleanup_configmap
+            namespace:
+              componentInputParameter: namespace
+            pvc_name:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+        taskInfo:
+          name: Final Report & Cleanup
+        triggerPolicy:
+          strategy: ALL_UPSTREAM_TASKS_COMPLETED
+      setup-run:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-setup-run
+        inputs:
+          parameters:
+            test_configs_json:
+              componentInputParameter: test_configs
+            timeout_minutes:
+              componentInputParameter: timeout_minutes
+        taskInfo:
+          name: Setup
+  inputDefinitions:
+    parameters:
+      cleanup_configmap:
+        defaultValue: ''
+        isOptional: true
+        parameterType: STRING
+      model_name:
+        defaultValue: glm5.2
+        isOptional: true
+        parameterType: STRING
+      namespace:
+        defaultValue: guidellm-nightly
+        isOptional: true
+        parameterType: STRING
+      redeploy_configmaps:
+        defaultValue: '[]'
+        isOptional: true
+        parameterType: STRING
+      test_configs:
+        defaultValue: '[{"name": "small-128-64", "prompt_tokens": 128, "output_tokens":
+          64, "duration": 120}, {"name": "medium-256-128", "prompt_tokens": 256, "output_tokens":
+          128, "duration": 120}, {"name": "large-512-256", "prompt_tokens": 512, "output_tokens":
+          256, "duration": 120}]'
+        isOptional: true
+        parameterType: STRING
+      timeout_minutes:
+        defaultValue: 120.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.17.0
+---
+platforms:
+  kubernetes:
+    deploymentSpec:
+      executors:
+        exec-finalize-run:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+        exec-redeploy-model:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-redeploy-model-2:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-redeploy-model-3:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-redeploy-model-4:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-run-single-test:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-run-single-test-2:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-run-single-test-3:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-run-single-test-4:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-run-single-test-5:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+          secretAsEnv:
+          - keyToEnv:
+            - envVar: RHOAI_ENDPOINT
+              secretKey: endpoint
+            - envVar: RHOAI_TOKEN
+              secretKey: token
+            optional: false
+            secretName: guidellm-rhoai-credentials
+            secretNameParameter:
+              runtimeValue:
+                constant: guidellm-rhoai-credentials
+        exec-setup-run:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results

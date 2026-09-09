@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: guidellm-benchmark-results
+  namespace: guidellm-nightly
+  labels:
+    app.kubernetes.io/name: guidellm-benchmark
+    app.kubernetes.io/component: results
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
