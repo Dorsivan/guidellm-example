@@ -6,9 +6,9 @@ Kubernetes operations (model redeployment, cleanup) run in separate steps
 using a lightweight base image.
 
 Pipeline DAG (for MAX_TEST_SLOTS=5):
-  setup_run → test_0 → redeploy_0 → test_1 → redeploy_1 → ... → test_4
+  setup_run → scale_down → test_0 → redeploy_0 → ... → test_4 → scale_up
                                                                      ↓
-                                                              finalize (exit handler)
+                                                              finalize (exit handler, scale-up safety net)
 
 Unused slots return immediately (no-op). Slots past the deadline return
 "skipped". The finalize step always runs and produces a Markdown report.
@@ -351,6 +351,130 @@ def redeploy_model(
 
 @dsl.component(
     base_image=UBI_IMAGE,
+    packages_to_install=["kubernetes>=28.0.0"],
+)
+def scale_down_models(
+    scale_targets_json: str,
+    run_id: str,
+    namespace: str,
+) -> str:
+    """Scale down LLMInferenceService resources to free capacity for benchmarks."""
+    import json
+    import os
+
+    targets = json.loads(scale_targets_json)
+    if not targets:
+        print("No scale targets specified, skipping")
+        return json.dumps({"status": "skipped", "reason": "no targets"})
+
+    from kubernetes import client, config as k8s_config
+    from kubernetes.dynamic import DynamicClient
+
+    k8s_config.load_incluster_config()
+    dyn = DynamicClient(client.ApiClient())
+    api = dyn.resources.get(kind="LLMInferenceService")
+
+    originals = []
+    results = []
+
+    for target in targets:
+        name = target["name"]
+        ns = target.get("namespace", namespace)
+        desired = target["replicas"]
+
+        try:
+            resource = api.get(name=name, namespace=ns)
+            spec = resource.to_dict().get("spec", {})
+            original = spec.get("replicas", 1)
+            originals.append({"name": name, "namespace": ns, "replicas": original})
+
+            api.patch(
+                body={"spec": {"replicas": desired}},
+                name=name, namespace=ns,
+                content_type="application/merge-patch+json",
+            )
+            print(f"  Scaled {ns}/{name}: {original} -> {desired}")
+            results.append({
+                "name": name, "namespace": ns, "status": "scaled",
+                "from": original, "to": desired,
+            })
+        except Exception as exc:
+            print(f"  Failed to scale {ns}/{name}: {exc}")
+            results.append({
+                "name": name, "namespace": ns, "status": "failed",
+                "reason": str(exc),
+            })
+
+    originals_path = f"/mnt/results/{run_id}/original_replicas.json"
+    with open(originals_path, "w") as f:
+        json.dump(originals, f, indent=2)
+    print(f"Saved original replica counts to {originals_path}")
+
+    return json.dumps({"status": "completed", "results": results})
+
+
+@dsl.component(
+    base_image=UBI_IMAGE,
+    packages_to_install=["kubernetes>=28.0.0"],
+)
+def scale_up_models(
+    run_id: str,
+) -> str:
+    """Restore LLMInferenceService resources to their original replica counts."""
+    import json
+    import os
+
+    originals_path = f"/mnt/results/{run_id}/original_replicas.json"
+    if not os.path.exists(originals_path):
+        print("No original replicas file found, skipping")
+        return json.dumps({"status": "skipped", "reason": "no originals file"})
+
+    with open(originals_path) as f:
+        originals = json.load(f)
+
+    if not originals:
+        return json.dumps({"status": "skipped", "reason": "empty originals"})
+
+    from kubernetes import client, config as k8s_config
+    from kubernetes.dynamic import DynamicClient
+
+    k8s_config.load_incluster_config()
+    dyn = DynamicClient(client.ApiClient())
+    api = dyn.resources.get(kind="LLMInferenceService")
+
+    results = []
+    for entry in originals:
+        name = entry["name"]
+        ns = entry["namespace"]
+        replicas = entry["replicas"]
+
+        try:
+            api.patch(
+                body={"spec": {"replicas": replicas}},
+                name=name, namespace=ns,
+                content_type="application/merge-patch+json",
+            )
+            print(f"  Restored {ns}/{name} to {replicas} replicas")
+            results.append({
+                "name": name, "namespace": ns, "status": "restored",
+                "replicas": replicas,
+            })
+        except Exception as exc:
+            print(f"  Failed to restore {ns}/{name}: {exc}")
+            results.append({
+                "name": name, "namespace": ns, "status": "failed",
+                "reason": str(exc),
+            })
+
+    marker_path = f"/mnt/results/{run_id}/scale_up_done"
+    with open(marker_path, "w") as f:
+        f.write("done")
+
+    return json.dumps({"status": "completed", "results": results})
+
+
+@dsl.component(
+    base_image=UBI_IMAGE,
     packages_to_install=["kubernetes>=28.0.0", "pyyaml>=6.0"],
 )
 def finalize_run(
@@ -567,6 +691,45 @@ def finalize_run(
     with open(final_report.path, "w") as f:
         f.write("\n".join(lines))
 
+    # ---- Scale-up safety net (if scale_up_models step didn't run) -----
+
+    scale_up_status = "not needed"
+    marker = f"{run_dir}/scale_up_done"
+    originals_path = f"{run_dir}/original_replicas.json"
+    if os.path.exists(originals_path) and not os.path.exists(marker):
+        try:
+            from kubernetes import client as k8s_client
+            from kubernetes import config as k8s_cfg
+            from kubernetes.dynamic import DynamicClient as DynClient
+
+            k8s_cfg.load_incluster_config()
+            dyn2 = DynClient(k8s_client.ApiClient())
+            llm_api = dyn2.resources.get(kind="LLMInferenceService")
+
+            with open(originals_path) as of:
+                originals_list = json.load(of)
+
+            restored = 0
+            for entry in originals_list:
+                try:
+                    llm_api.patch(
+                        body={"spec": {"replicas": entry["replicas"]}},
+                        name=entry["name"], namespace=entry["namespace"],
+                        content_type="application/merge-patch+json",
+                    )
+                    restored += 1
+                    print(f"  Safety net: restored {entry['namespace']}/{entry['name']} to {entry['replicas']}")
+                except Exception as exc2:
+                    print(f"  Safety net: failed to restore {entry['namespace']}/{entry['name']}: {exc2}")
+
+            scale_up_status = f"safety net restored {restored}/{len(originals_list)} services"
+        except Exception as exc:
+            scale_up_status = f"safety net error: {exc}"
+    elif os.path.exists(marker):
+        scale_up_status = "already completed by scale-up step"
+
+    print(f"Scale-up: {scale_up_status}")
+
     # ---- Cleanup model ------------------------------------------------
 
     cleanup_status = "not requested"
@@ -627,6 +790,7 @@ def guidellm_benchmark_pipeline(
         {"name": "large-512-256",  "prompt_tokens": 512, "output_tokens": 256, "duration": 120},
     ]),
     redeploy_configmaps: str = "[]",
+    scale_targets: str = "[]",
     model_name: str = "glm5.2",
     timeout_minutes: int = 120,
     namespace: str = "guidellm-nightly",
@@ -642,6 +806,10 @@ def guidellm_benchmark_pipeline(
         redeploy_configmaps: JSON array of ConfigMap names to apply
             between tests. Entry 0 = between test 0 and 1, etc.
             Use "" to skip redeployment for that slot.
+        scale_targets: JSON array of LLMInferenceService objects to
+            scale down before benchmarking and restore after.
+            Each: {"name": str, "namespace"?: str, "replicas": int}.
+            Namespace defaults to the pipeline namespace.
         model_name: Model identifier for the --backend argument.
         timeout_minutes: Total time budget. Steps past the deadline
             return "skipped" immediately.
@@ -668,7 +836,17 @@ def guidellm_benchmark_pipeline(
     kubernetes.mount_pvc(finalize, RESULTS_PVC, "/mnt/results")
 
     with dsl.ExitHandler(exit_task=finalize):
-        prev_task = setup
+        # -- Scale down: free capacity for benchmarks --------------------
+        sd = scale_down_models(
+            scale_targets_json=scale_targets,
+            run_id=setup.outputs["run_id"],
+            namespace=namespace,
+        )
+        sd.set_display_name("Scale Down Models")
+        sd.after(setup)
+        kubernetes.mount_pvc(sd, RESULTS_PVC, "/mnt/results")
+
+        prev_task = sd
 
         for i in range(MAX_TEST_SLOTS):
             # -- Test step ------------------------------------------------
@@ -716,6 +894,14 @@ def guidellm_benchmark_pipeline(
                 prev_task = r
             else:
                 prev_task = t
+
+        # -- Scale up: restore original replicas -------------------------
+        su = scale_up_models(
+            run_id=setup.outputs["run_id"],
+        )
+        su.set_display_name("Scale Up Models")
+        su.after(prev_task)
+        kubernetes.mount_pvc(su, RESULTS_PVC, "/mnt/results")
 
 
 # ---------------------------------------------------------------------------
