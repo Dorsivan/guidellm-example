@@ -808,7 +808,7 @@ def guidellm_benchmark_pipeline(
             Use "" to skip redeployment for that slot.
         scale_targets: JSON array of LLMInferenceService objects to
             scale down before benchmarking and restore after.
-            Each: {"name": str, "namespace"?: str, "replicas": int}.
+            Each: {{"name": str, "namespace"?: str, "replicas": int}}.
             Namespace defaults to the pipeline namespace.
         model_name: Model identifier for the --backend argument.
         timeout_minutes: Total time budget. Steps past the deadline

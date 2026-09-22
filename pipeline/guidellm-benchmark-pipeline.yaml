@@ -6,6 +6,7 @@
 #    model_name: str [Default: 'glm5.2']
 #    namespace: str [Default: 'guidellm-nightly']
 #    redeploy_configmaps: str [Default: '[]']
+#    scale_targets: str [Default: '[]']
 #    test_configs: str [Default: '[{"name": "small-128-64", "prompt_tokens": 128, "output_tokens": 64, "duration": 120}, {"name": "medium-256-128", "prompt_tokens": 256, "output_tokens": 128, "duration": 120}, {"name": "large-512-256", "prompt_tokens": 512, "output_tokens": 256, "duration": 120}]']
 #    timeout_minutes: int [Default: 120.0]
 components:
@@ -105,6 +106,8 @@ components:
             enableCache: true
           componentRef:
             name: comp-run-single-test
+          dependentTasks:
+          - scale-down-models
           inputs:
             parameters:
               deadline_epoch:
@@ -208,6 +211,34 @@ components:
                   constant: 4.0
           taskInfo:
             name: Test 4
+        scale-down-models:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-scale-down-models
+          inputs:
+            parameters:
+              namespace:
+                componentInputParameter: pipelinechannel--namespace
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+              scale_targets_json:
+                componentInputParameter: pipelinechannel--scale_targets
+          taskInfo:
+            name: Scale Down Models
+        scale-up-models:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-scale-up-models
+          dependentTasks:
+          - run-single-test-5
+          inputs:
+            parameters:
+              run_id:
+                componentInputParameter: pipelinechannel--setup-run-run_id
+          taskInfo:
+            name: Scale Up Models
     inputDefinitions:
       parameters:
         pipelinechannel--model_name:
@@ -215,6 +246,8 @@ components:
         pipelinechannel--namespace:
           parameterType: STRING
         pipelinechannel--redeploy_configmaps:
+          parameterType: STRING
+        pipelinechannel--scale_targets:
           parameterType: STRING
         pipelinechannel--setup-run-deadline_epoch:
           parameterType: NUMBER_DOUBLE
@@ -403,6 +436,30 @@ components:
       parameters:
         Output:
           parameterType: STRING
+  comp-scale-down-models:
+    executorLabel: exec-scale-down-models
+    inputDefinitions:
+      parameters:
+        namespace:
+          parameterType: STRING
+        run_id:
+          parameterType: STRING
+        scale_targets_json:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-scale-up-models:
+    executorLabel: exec-scale-up-models
+    inputDefinitions:
+      parameters:
+        run_id:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
   comp-setup-run:
     executorLabel: exec-setup-run
     inputDefinitions:
@@ -569,7 +626,31 @@ deploymentSpec:
           \            f\"./{t['name']}-report.html\"\n        )\n    lines.extend([\n\
           \        \"\",\n        \"oc delete pod results-viewer\",\n        \"```\"\
           ,\n        \"\",\n    ])\n\n    with open(final_report.path, \"w\") as f:\n\
-          \        f.write(\"\\n\".join(lines))\n\n    # ---- Cleanup model ------------------------------------------------\n\
+          \        f.write(\"\\n\".join(lines))\n\n    # ---- Scale-up safety net\
+          \ (if scale_up_models step didn't run) -----\n\n    scale_up_status = \"\
+          not needed\"\n    marker = f\"{run_dir}/scale_up_done\"\n    originals_path\
+          \ = f\"{run_dir}/original_replicas.json\"\n    if os.path.exists(originals_path)\
+          \ and not os.path.exists(marker):\n        try:\n            from kubernetes\
+          \ import client as k8s_client\n            from kubernetes import config\
+          \ as k8s_cfg\n            from kubernetes.dynamic import DynamicClient as\
+          \ DynClient\n\n            k8s_cfg.load_incluster_config()\n           \
+          \ dyn2 = DynClient(k8s_client.ApiClient())\n            llm_api = dyn2.resources.get(kind=\"\
+          LLMInferenceService\")\n\n            with open(originals_path) as of:\n\
+          \                originals_list = json.load(of)\n\n            restored\
+          \ = 0\n            for entry in originals_list:\n                try:\n\
+          \                    llm_api.patch(\n                        body={\"spec\"\
+          : {\"replicas\": entry[\"replicas\"]}},\n                        name=entry[\"\
+          name\"], namespace=entry[\"namespace\"],\n                        content_type=\"\
+          application/merge-patch+json\",\n                    )\n               \
+          \     restored += 1\n                    print(f\"  Safety net: restored\
+          \ {entry['namespace']}/{entry['name']} to {entry['replicas']}\")\n     \
+          \           except Exception as exc2:\n                    print(f\"  Safety\
+          \ net: failed to restore {entry['namespace']}/{entry['name']}: {exc2}\"\
+          )\n\n            scale_up_status = f\"safety net restored {restored}/{len(originals_list)}\
+          \ services\"\n        except Exception as exc:\n            scale_up_status\
+          \ = f\"safety net error: {exc}\"\n    elif os.path.exists(marker):\n   \
+          \     scale_up_status = \"already completed by scale-up step\"\n\n    print(f\"\
+          Scale-up: {scale_up_status}\")\n\n    # ---- Cleanup model ------------------------------------------------\n\
           \n    cleanup_status = \"not requested\"\n    if cleanup_configmap and cleanup_configmap.strip():\n\
           \        try:\n            from kubernetes import client, config as k8s_config\n\
           \            from kubernetes.dynamic import DynamicClient\n            import\
@@ -1471,6 +1552,118 @@ deploymentSpec:
           resourceCpuRequest: '2'
           resourceMemoryLimit: 8Gi
           resourceMemoryRequest: 4Gi
+    exec-scale-down-models:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - scale_down_models
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kubernetes>=28.0.0'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.17.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef scale_down_models(\n    scale_targets_json: str,\n    run_id:\
+          \ str,\n    namespace: str,\n) -> str:\n    \"\"\"Scale down LLMInferenceService\
+          \ resources to free capacity for benchmarks.\"\"\"\n    import json\n  \
+          \  import os\n\n    targets = json.loads(scale_targets_json)\n    if not\
+          \ targets:\n        print(\"No scale targets specified, skipping\")\n  \
+          \      return json.dumps({\"status\": \"skipped\", \"reason\": \"no targets\"\
+          })\n\n    from kubernetes import client, config as k8s_config\n    from\
+          \ kubernetes.dynamic import DynamicClient\n\n    k8s_config.load_incluster_config()\n\
+          \    dyn = DynamicClient(client.ApiClient())\n    api = dyn.resources.get(kind=\"\
+          LLMInferenceService\")\n\n    originals = []\n    results = []\n\n    for\
+          \ target in targets:\n        name = target[\"name\"]\n        ns = target.get(\"\
+          namespace\", namespace)\n        desired = target[\"replicas\"]\n\n    \
+          \    try:\n            resource = api.get(name=name, namespace=ns)\n   \
+          \         spec = resource.to_dict().get(\"spec\", {})\n            original\
+          \ = spec.get(\"replicas\", 1)\n            originals.append({\"name\": name,\
+          \ \"namespace\": ns, \"replicas\": original})\n\n            api.patch(\n\
+          \                body={\"spec\": {\"replicas\": desired}},\n           \
+          \     name=name, namespace=ns,\n                content_type=\"application/merge-patch+json\"\
+          ,\n            )\n            print(f\"  Scaled {ns}/{name}: {original}\
+          \ -> {desired}\")\n            results.append({\n                \"name\"\
+          : name, \"namespace\": ns, \"status\": \"scaled\",\n                \"from\"\
+          : original, \"to\": desired,\n            })\n        except Exception as\
+          \ exc:\n            print(f\"  Failed to scale {ns}/{name}: {exc}\")\n \
+          \           results.append({\n                \"name\": name, \"namespace\"\
+          : ns, \"status\": \"failed\",\n                \"reason\": str(exc),\n \
+          \           })\n\n    originals_path = f\"/mnt/results/{run_id}/original_replicas.json\"\
+          \n    with open(originals_path, \"w\") as f:\n        json.dump(originals,\
+          \ f, indent=2)\n    print(f\"Saved original replica counts to {originals_path}\"\
+          )\n\n    return json.dumps({\"status\": \"completed\", \"results\": results})\n\
+          \n"
+        image: registry.redhat.io/ubi9/python-311:latest
+    exec-scale-up-models:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - scale_up_models
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kubernetes>=28.0.0'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.17.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef scale_up_models(\n    run_id: str,\n) -> str:\n    \"\"\"Restore\
+          \ LLMInferenceService resources to their original replica counts.\"\"\"\n\
+          \    import json\n    import os\n\n    originals_path = f\"/mnt/results/{run_id}/original_replicas.json\"\
+          \n    if not os.path.exists(originals_path):\n        print(\"No original\
+          \ replicas file found, skipping\")\n        return json.dumps({\"status\"\
+          : \"skipped\", \"reason\": \"no originals file\"})\n\n    with open(originals_path)\
+          \ as f:\n        originals = json.load(f)\n\n    if not originals:\n   \
+          \     return json.dumps({\"status\": \"skipped\", \"reason\": \"empty originals\"\
+          })\n\n    from kubernetes import client, config as k8s_config\n    from\
+          \ kubernetes.dynamic import DynamicClient\n\n    k8s_config.load_incluster_config()\n\
+          \    dyn = DynamicClient(client.ApiClient())\n    api = dyn.resources.get(kind=\"\
+          LLMInferenceService\")\n\n    results = []\n    for entry in originals:\n\
+          \        name = entry[\"name\"]\n        ns = entry[\"namespace\"]\n   \
+          \     replicas = entry[\"replicas\"]\n\n        try:\n            api.patch(\n\
+          \                body={\"spec\": {\"replicas\": replicas}},\n          \
+          \      name=name, namespace=ns,\n                content_type=\"application/merge-patch+json\"\
+          ,\n            )\n            print(f\"  Restored {ns}/{name} to {replicas}\
+          \ replicas\")\n            results.append({\n                \"name\": name,\
+          \ \"namespace\": ns, \"status\": \"restored\",\n                \"replicas\"\
+          : replicas,\n            })\n        except Exception as exc:\n        \
+          \    print(f\"  Failed to restore {ns}/{name}: {exc}\")\n            results.append({\n\
+          \                \"name\": name, \"namespace\": ns, \"status\": \"failed\"\
+          ,\n                \"reason\": str(exc),\n            })\n\n    marker_path\
+          \ = f\"/mnt/results/{run_id}/scale_up_done\"\n    with open(marker_path,\
+          \ \"w\") as f:\n        f.write(\"done\")\n\n    return json.dumps({\"status\"\
+          : \"completed\", \"results\": results})\n\n"
+        image: registry.redhat.io/ubi9/python-311:latest
     exec-setup-run:
       container:
         args:
@@ -1536,6 +1729,8 @@ root:
               componentInputParameter: namespace
             pipelinechannel--redeploy_configmaps:
               componentInputParameter: redeploy_configmaps
+            pipelinechannel--scale_targets:
+              componentInputParameter: scale_targets
             pipelinechannel--setup-run-deadline_epoch:
               taskOutputParameter:
                 outputParameterKey: deadline_epoch
@@ -1596,6 +1791,10 @@ root:
         isOptional: true
         parameterType: STRING
       redeploy_configmaps:
+        defaultValue: '[]'
+        isOptional: true
+        parameterType: STRING
+      scale_targets:
         defaultValue: '[]'
         isOptional: true
         parameterType: STRING
@@ -1786,6 +1985,20 @@ platforms:
             secretNameParameter:
               runtimeValue:
                 constant: guidellm-rhoai-credentials
+        exec-scale-down-models:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
+        exec-scale-up-models:
+          pvcMount:
+          - constant: guidellm-benchmark-results
+            mountPath: /mnt/results
+            pvcNameParameter:
+              runtimeValue:
+                constant: guidellm-benchmark-results
         exec-setup-run:
           pvcMount:
           - constant: guidellm-benchmark-results
